@@ -1,55 +1,55 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import * as THREE from "three";
 
-export function Board() {
-  const squares = [];
+const SQUARE_GEO = new THREE.PlaneGeometry(1, 1);
+const DARK_MAT  = new THREE.MeshStandardMaterial({ color: "#0a0a1a", metalness: 0.5, roughness: 0.3, emissive: "#000000", emissiveIntensity: 0.5 });
+const LIGHT_MAT = new THREE.MeshStandardMaterial({ color: "#1a1a2a", metalness: 0.5, roughness: 0.3, emissive: "#001122", emissiveIntensity: 0.5 });
 
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      const isDark = (i + j) % 2 === 1;
-      squares.push(
-        <Square 
-          key={`${i}-${j}`} 
-          position={[i - 3.5, -0.05, j - 3.5] as any} 
-          isDark={isDark} 
-        />
-      );
+const ROTATION = new THREE.Euler(-Math.PI / 2, 0, 0);
+const ROTATION_Q = new THREE.Quaternion().setFromEuler(ROTATION);
+const SCALE_ONE = new THREE.Vector3(1, 1, 1);
+
+export function Board() {
+  const darkRef  = useRef<THREE.InstancedMesh>(null);
+  const lightRef = useRef<THREE.InstancedMesh>(null);
+
+  useEffect(() => {
+    const dummy = new THREE.Object3D();
+    dummy.quaternion.copy(ROTATION_Q);
+    dummy.scale.copy(SCALE_ONE);
+
+    let darkIdx = 0;
+    let lightIdx = 0;
+
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        dummy.position.set(col - 3.5, -0.05, row - 3.5);
+        dummy.updateMatrix();
+        const isDark = (row + col) % 2 === 1;
+        if (isDark) {
+          darkRef.current?.setMatrixAt(darkIdx++, dummy.matrix);
+        } else {
+          lightRef.current?.setMatrixAt(lightIdx++, dummy.matrix);
+        }
+      }
     }
-  }
+
+    if (darkRef.current)  darkRef.current.instanceMatrix.needsUpdate  = true;
+    if (lightRef.current) lightRef.current.instanceMatrix.needsUpdate = true;
+  }, []);
 
   return (
     <group>
-      {squares}
+      <instancedMesh ref={darkRef}  args={[SQUARE_GEO, DARK_MAT,  32]} />
+      <instancedMesh ref={lightRef} args={[SQUARE_GEO, LIGHT_MAT, 32]} />
+
       {/* Outer frame */}
-      <mesh position={[0, -0.1, 0] as any} rotation={[-Math.PI / 2, 0, 0] as any}>
+      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[9, 9]} />
         <meshStandardMaterial color="#050510" metalness={0.8} roughness={0.2} />
       </mesh>
-      
-      {/* Cinematic grid lines */}
-      <gridHelper args={[8, 8, "#333", "#111"]} position={[0, 0.001, 0] as any} />
-    </group>
-  );
-}
 
-function Square({ isDark, position }: { isDark: boolean; position: any }) {
-  const color = isDark ? "#0a0a1a" : "#1a1a2a";
-  
-  return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, 0] as any}>
-      <planeGeometry args={[1, 1]} />
-      <meshStandardMaterial 
-        color={color} 
-        metalness={0.5} 
-        roughness={0.3} 
-        emissive={isDark ? "#000" : "#001122"}
-        emissiveIntensity={0.5}
-      />
-    </mesh>
+      <gridHelper args={[8, 8, "#333", "#111"]} position={[0, 0.001, 0]} />
+    </group>
   );
 }

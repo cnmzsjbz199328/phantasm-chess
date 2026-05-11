@@ -1,203 +1,261 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import gsap from "gsap";
+import type { AttackEffectProps } from "../../shared/types";
+import { SIDE_COLORS } from "../../shared/pieceColors";
 
-interface EffectProps {
-  position: [number, number, number];
+// ── primitives ────────────────────────────────────────────────────────────────
+
+interface ExpandingRingProps {
   color: string;
-  accentColor: string;
-  type: string;
+  y?: number;
+  delay?: number;
+  maxR?: number;
+  speed?: number;
+  thick?: number;
 }
 
-export function AttackEffect({ position, color, accentColor, type }: EffectProps) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  useEffect(() => {
-    // Auto-remove effect after duration
-    const timeout = setTimeout(() => {
-      if (groupRef.current) {
-        groupRef.current.visible = false;
-      }
-    }, 1200);
-    return () => clearTimeout(timeout);
-  }, []);
-
+function ExpandingRing({ color, y = 0, delay = 0, maxR = 2, speed = 3, thick = 0.045 }: ExpandingRingProps) {
+  const ref = useRef<THREE.Mesh>(null);
+  const t = useRef(-delay);
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (t.current <= 0 || !ref.current) return;
+    const r = Math.min(t.current * speed, maxR);
+    ref.current.scale.setScalar(r);
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - r / maxR);
+  });
   return (
-    <group ref={groupRef} position={position}>
-      {type === 'p' && <PawnEffect color={color} accentColor={accentColor} />}
-      {type === 'n' && <KnightEffect color={color} accentColor={accentColor} />}
-      {type === 'b' && <BishopEffect color={color} accentColor={accentColor} />}
-      {type === 'r' && <RookEffect color={color} accentColor={accentColor} />}
-      {type === 'q' && <QueenEffect color={color} accentColor={accentColor} />}
-      {type === 'k' && <KingEffect color={color} accentColor={accentColor} />}
-    </group>
+    <mesh ref={ref} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.001}>
+      <ringGeometry args={[1, 1 + thick, 48]} />
+      <meshBasicMaterial color={color} transparent opacity={1} side={THREE.DoubleSide} depthWrite={false} />
+    </mesh>
   );
 }
 
-function FlashSphere({ color, r = 0.22, dur = 0.25 }: { color: string, r?: number, dur?: number }) {
+interface FlashSphereProps {
+  color: string;
+  r?: number;
+  dur?: number;
+}
+
+function FlashSphere({ color, r = 0.3, dur = 0.28 }: FlashSphereProps) {
   const ref = useRef<THREE.Mesh>(null);
-  useEffect(() => {
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
     if (!ref.current) return;
-    gsap.to(ref.current.scale, { x: 3.5, y: 3.5, z: 3.5, duration: dur, ease: "power2.out" });
-    gsap.to(ref.current.material, { opacity: 0, duration: dur, ease: "power2.out" });
-  }, [dur]);
+    const p = t.current / dur;
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - p);
+    ref.current.scale.setScalar(1 + p * 2.5);
+  });
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[r, 16, 16]} />
-      <meshBasicMaterial color={color} transparent />
+      <sphereGeometry args={[r, 10, 10]} />
+      <meshBasicMaterial color={color} transparent opacity={1} depthWrite={false} />
     </mesh>
   );
 }
 
-function ExpandingRing({ color, y = 0, maxR = 2.0, speed = 3.0, delay = 0, thick = 0.05 }: any) {
+interface LightPillarProps {
+  color: string;
+  h?: number;
+  dur?: number;
+}
+
+function LightPillar({ color, h = 4, dur = 0.6 }: LightPillarProps) {
   const ref = useRef<THREE.Mesh>(null);
-  const dur = maxR / speed;
-  useEffect(() => {
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
     if (!ref.current) return;
-    ref.current.scale.set(0.01, 0.01, 0.01);
-    gsap.to(ref.current.scale, { x: maxR, y: maxR, z: 1, duration: dur, delay, ease: "power1.out" });
-    gsap.to(ref.current.material, { opacity: 0, duration: dur, delay, ease: "power1.out" });
-  }, [dur, delay, maxR]);
+    const p = t.current / dur;
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, Math.sin(p * Math.PI) * 0.8);
+    const s = 0.5 + Math.sin(p * Math.PI) * 1.1;
+    ref.current.scale.x = s;
+    ref.current.scale.z = s;
+  });
   return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]}>
-      <ringGeometry args={[1 - thick, 1, 32]} />
-      <meshBasicMaterial color={color} transparent />
+    <mesh ref={ref} position={[0, h / 2, 0]}>
+      <cylinderGeometry args={[0.12, 0.35, h, 8]} />
+      <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
     </mesh>
   );
 }
 
-function LightPillar({ color, h = 4.5, dur = 0.65 }: any) {
-  const ref = useRef<THREE.Mesh>(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    gsap.fromTo(ref.current.material, { opacity: 0 }, { opacity: 1, duration: dur / 2, yoyo: true, repeat: 1, ease: "sine.inOut" });
-    gsap.to(ref.current.scale, { x: 1.2, z: 1.2, duration: dur, yoyo: true, repeat: 1, ease: "sine.inOut" });
-  }, [dur]);
-  return (
-    <mesh ref={ref} position={[0, h / 2 - 1.4, 0]}>
-      <cylinderGeometry args={[0.12, 0.35, h, 16]} />
-      <meshBasicMaterial color={color} transparent />
-    </mesh>
-  );
+type BurstMode = "sphere" | "forward" | "radial" | "up";
+
+interface ParticleBurstProps {
+  color: string;
+  count?: number;
+  speed?: number;
+  mode?: BurstMode;
+  dur?: number;
+  size?: number;
+  grav?: number;
 }
 
-function ParticleBurst({ color, count = 20, speed = 3, mode = 'sphere', grav = 4, dur = 1 }: any) {
-  const pointsRef = useRef<THREE.Points>(null);
-  const particles = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    const vel = new Float32Array(count * 3);
+function ParticleBurst({ color, count = 30, speed = 2.5, mode = "sphere", dur = 0.7, size = 0.07, grav = 3 }: ParticleBurstProps) {
+  const { geo, vel } = useMemo(() => {
+    const positions = new Float32Array(count * 3).fill(0);
+    const velocities = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-        let vx, vy, vz;
-        if (mode === 'forward') {
-            vx = (Math.random() - 0.5) * speed * 0.5;
-            vy = (Math.random() - 0.5) * speed * 0.5;
-            vz = Math.random() * speed;
-        } else if (mode === 'radial') {
-            const angle = Math.random() * Math.PI * 2;
-            vx = Math.cos(angle) * speed;
-            vy = Math.random() * 0.5 * speed;
-            vz = Math.sin(angle) * speed;
-        } else if (mode === 'up') {
-            vx = (Math.random() - 0.5) * speed * 0.5;
-            vy = Math.random() * speed;
-            vz = (Math.random() - 0.5) * speed * 0.5;
-        } else {
-            const phi = Math.acos(2 * Math.random() - 1);
-            const theta = 2 * Math.PI * Math.random();
-            vx = Math.sin(phi) * Math.cos(theta) * speed;
-            vy = Math.sin(phi) * Math.sin(theta) * speed;
-            vz = Math.cos(phi) * speed;
-        }
-        vel[i * 3] = vx;
-        vel[i * 3 + 1] = vy;
-        vel[i * 3 + 2] = vz;
+      if (mode === "sphere") {
+        const th = Math.random() * Math.PI * 2;
+        const ph = Math.acos(2 * Math.random() - 1);
+        const r = speed * (0.5 + Math.random() * 0.5);
+        velocities[i * 3]     = Math.sin(ph) * Math.cos(th) * r;
+        velocities[i * 3 + 1] = Math.cos(ph) * r;
+        velocities[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * r;
+      } else if (mode === "forward") {
+        velocities[i * 3]     = (Math.random() - 0.5) * speed * 0.45;
+        velocities[i * 3 + 1] = (Math.random() - 0.1) * speed * 0.25;
+        velocities[i * 3 + 2] = (Math.random() * 0.6 + 0.4) * speed;
+      } else if (mode === "radial") {
+        const a = Math.random() * Math.PI * 2;
+        const r = speed * (0.4 + Math.random() * 0.6);
+        velocities[i * 3]     = Math.cos(a) * r;
+        velocities[i * 3 + 1] = Math.random() * speed * 0.35;
+        velocities[i * 3 + 2] = Math.sin(a) * r;
+      } else {
+        const a = Math.random() * Math.PI * 2;
+        velocities[i * 3]     = Math.cos(a) * speed * 0.4;
+        velocities[i * 3 + 1] = speed * (0.6 + Math.random() * 0.4);
+        velocities[i * 3 + 2] = Math.sin(a) * speed * 0.4;
+      }
     }
-    return { pos, vel };
+    const geometry = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(positions, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute("position", attr);
+    return { geo: geometry, vel: velocities };
   }, [count, speed, mode]);
 
-  useFrame((_, delta) => {
-    if (!pointsRef.current) return;
-    const posArr = pointsRef.current.geometry.attributes.position.array as Float32Array;
+  const ref = useRef<THREE.Points>(null);
+  const t = useRef(0);
+
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (!ref.current) return;
+    const arr = geo.attributes.position.array as Float32Array;
     for (let i = 0; i < count; i++) {
-      particles.vel[i * 3 + 1] -= grav * delta;
-      posArr[i * 3] += particles.vel[i * 3] * delta;
-      posArr[i * 3 + 1] += particles.vel[i * 3 + 1] * delta;
-      posArr[i * 3 + 2] += particles.vel[i * 3 + 2] * delta;
+      arr[i * 3]     += vel[i * 3]     * dt;
+      arr[i * 3 + 1] += vel[i * 3 + 1] * dt - grav * dt * t.current;
+      arr[i * 3 + 2] += vel[i * 3 + 2] * dt;
     }
-    pointsRef.current.geometry.attributes.position.needsUpdate = true;
-    (pointsRef.current.material as THREE.PointsMaterial).opacity -= delta / dur;
+    geo.attributes.position.needsUpdate = true;
+    (ref.current.material as THREE.PointsMaterial).opacity = Math.max(0, 1 - t.current / dur);
   });
 
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={particles.pos} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial color={color} size={0.05} transparent />
+    <points ref={ref} geometry={geo}>
+      <pointsMaterial size={size} color={color} transparent opacity={1} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
 
-// Composition Components
-const PawnEffect = ({ color, accentColor }: any) => (
-  <>
-    <FlashSphere color={color} r={0.22} dur={0.22} />
-    <ParticleBurst color={accentColor} count={38} mode="forward" speed={3.2} grav={4.5} />
-    <ParticleBurst color="#ffffff" count={14} mode="forward" speed={2.0} grav={3.0} />
-  </>
-);
+// ── per-piece compositions ────────────────────────────────────────────────────
 
-const KnightEffect = ({ color, accentColor }: any) => (
-  <>
-    <FlashSphere color={color} r={0.22} />
-    <ParticleBurst color={color} count={48} mode="radial" speed={3.8} grav={5.5} />
-    <ExpandingRing color={color} y={-1.4} maxR={2.8} speed={4.2} />
-    <ExpandingRing color={accentColor} y={-1.4} maxR={1.8} speed={3.2} delay={0.1} />
-  </>
-);
+function PawnEffect({ glow, acc }: { glow: string; acc: string }) {
+  return (
+    <>
+      <FlashSphere color={glow} r={0.22} dur={0.22} />
+      <ParticleBurst color={acc}     count={38} speed={3.2} mode="forward" dur={0.65} size={0.065} grav={4.5} />
+      <ParticleBurst color="#ffffff" count={14} speed={2.0} mode="forward" dur={0.38} size={0.04}  grav={3.0} />
+      <FlashSphere   color={acc}     r={0.14}   dur={0.18} />
+    </>
+  );
+}
 
-const BishopEffect = ({ color, accentColor }: any) => (
-  <>
-    <FlashSphere color={color} r={0.22} />
-    <LightPillar color={accentColor} h={4.5} dur={0.65} />
-    <ParticleBurst color={accentColor} count={30} mode="up" speed={2.0} grav={1.5} />
-    <ExpandingRing color={accentColor} maxR={1.6} speed={2.8} />
-  </>
-);
+function KnightEffect({ glow, acc }: { glow: string; acc: string }) {
+  return (
+    <>
+      <FlashSphere   color={glow} r={0.22} />
+      <ParticleBurst color={glow} count={48} speed={3.8} mode="radial" dur={0.72} size={0.08} grav={5.5} />
+      <ExpandingRing color={glow} y={-1.4} maxR={2.8} speed={4.2} delay={0}   thick={0.06} />
+      <ExpandingRing color={acc}  y={-1.4} maxR={1.8} speed={3.2} delay={0.1} thick={0.04} />
+      <FlashSphere   color={acc}  r={0.32} dur={0.25} />
+    </>
+  );
+}
 
-const RookEffect = ({ color, accentColor }: any) => (
-  <>
-    <FlashSphere color={color} r={0.22} />
-    <ExpandingRing color={color} y={-1.4} maxR={3.3} speed={4.8} delay={0} />
-    <ExpandingRing color={accentColor} y={-1.4} maxR={2.2} speed={3.6} delay={0.1} />
-    <ExpandingRing color={color} y={-1.4} maxR={1.2} speed={2.6} delay={0.22} />
-    <ParticleBurst color={accentColor} count={34} mode="radial" speed={2.8} grav={6.5} />
-  </>
-);
+function BishopEffect({ glow, acc }: { glow: string; acc: string }) {
+  return (
+    <>
+      <FlashSphere   color={glow} r={0.22} />
+      <LightPillar   color={acc}  h={4.5}  dur={0.65} />
+      <ParticleBurst color={acc}  count={30} speed={2.0} mode="up" dur={0.85} size={0.07} grav={1.5} />
+      <ExpandingRing color={acc}  maxR={1.6} speed={2.8} thick={0.035} />
+      <FlashSphere   color="#fff" r={0.28}   dur={0.22} />
+    </>
+  );
+}
 
-const QueenEffect = ({ color, accentColor }: any) => (
-  <>
-    <FlashSphere color={color} r={0.22} />
-    <ExpandingRing color={color} maxR={3.0} speed={3.5} delay={0} />
-    <ExpandingRing color={accentColor} maxR={2.1} speed={2.8} delay={0.08} />
-    <ExpandingRing color={color} maxR={1.3} speed={2.2} delay={0.16} />
-    <ParticleBurst color={color} count={55} mode="sphere" speed={3.2} grav={0.8} />
-    <FlashSphere color={color} r={0.5} />
-  </>
-);
+function RookEffect({ glow, acc }: { glow: string; acc: string }) {
+  return (
+    <>
+      <FlashSphere   color={glow} r={0.22} />
+      <ExpandingRing color={glow} y={-1.4} maxR={3.3} speed={4.8} delay={0}    thick={0.07} />
+      <ExpandingRing color={acc}  y={-1.4} maxR={2.2} speed={3.6} delay={0.1}  thick={0.05} />
+      <ExpandingRing color={glow} y={-1.4} maxR={1.2} speed={2.6} delay={0.22} thick={0.04} />
+      <ParticleBurst color={acc}  count={34} speed={2.8} mode="radial" dur={0.65} size={0.1} grav={6.5} />
+      <FlashSphere   color="#fff" r={0.42}   dur={0.2} />
+    </>
+  );
+}
 
-const KingEffect = ({ color, accentColor }: any) => (
-  <>
-    <FlashSphere color={color} r={0.22} />
-    <ExpandingRing color={accentColor} maxR={2.6} speed={3.2} delay={0} />
-    <ExpandingRing color={color} maxR={1.7} speed={2.6} delay={0.12} />
-    <ParticleBurst color={accentColor} count={44} mode="radial" speed={2.8} grav={3.5} />
-    <FlashSphere color={accentColor} r={0.55} />
-  </>
-);
+function QueenEffect({ glow, acc }: { glow: string; acc: string }) {
+  return (
+    <>
+      <FlashSphere   color={glow} r={0.22} />
+      <ExpandingRing color={glow} maxR={3.0} speed={3.5} delay={0}    thick={0.05} />
+      <ExpandingRing color={acc}  maxR={2.1} speed={2.8} delay={0.08} thick={0.04} />
+      <ExpandingRing color={glow} maxR={1.3} speed={2.2} delay={0.16} thick={0.035} />
+      <ParticleBurst color={glow} count={55} speed={3.2} mode="sphere" dur={0.9} size={0.07} grav={0.8} />
+      <FlashSphere   color={glow} r={0.5}    dur={0.32} />
+    </>
+  );
+}
+
+function KingEffect({ glow, acc }: { glow: string; acc: string }) {
+  return (
+    <>
+      <FlashSphere   color={glow} r={0.22} />
+      <ExpandingRing color={acc}  maxR={2.6} speed={3.2} delay={0}    thick={0.055} />
+      <ExpandingRing color={glow} maxR={1.7} speed={2.6} delay={0.12} thick={0.04} />
+      <ParticleBurst color={acc}  count={44} speed={2.8} mode="radial" dur={0.78} size={0.09} grav={3.5} />
+      <FlashSphere   color={acc}  r={0.55}   dur={0.38} />
+    </>
+  );
+}
+
+const EFFECT_DURATION = 1.15;
+
+// ── main export ───────────────────────────────────────────────────────────────
+
+export function AttackEffect({ pieceType, pieceColor, position, onComplete }: AttackEffectProps) {
+  const elapsed = useRef(0);
+  const done = useRef(false);
+
+  useFrame((_, dt) => {
+    elapsed.current += dt;
+    if (!done.current && elapsed.current > EFFECT_DURATION) {
+      done.current = true;
+      onComplete();
+    }
+  });
+
+  const { glow, accent: acc } = SIDE_COLORS[pieceColor];
+  const t = pieceType.toLowerCase();
+
+  return (
+    <group position={position}>
+      {t === "p" && <PawnEffect   glow={glow} acc={acc} />}
+      {t === "n" && <KnightEffect glow={glow} acc={acc} />}
+      {t === "b" && <BishopEffect glow={glow} acc={acc} />}
+      {t === "r" && <RookEffect   glow={glow} acc={acc} />}
+      {t === "q" && <QueenEffect  glow={glow} acc={acc} />}
+      {t === "k" && <KingEffect   glow={glow} acc={acc} />}
+    </group>
+  );
+}
