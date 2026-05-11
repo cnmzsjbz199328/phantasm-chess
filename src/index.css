@@ -5,9 +5,9 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   
-  --color-phantasm-bg: #0a0a0c;
-  --color-phantasm-rail: #0f0f12;
-  --color-phantasm-card: #14151a;
+  --color-phantasm-bg: #020912;
+  --color-phantasm-rail: #050d1a;
+  --color-phantasm-card: #0a1424;
   --color-phantasm-accent: #6366f1; /* Indigo-500 */
   --color-phantasm-accent-light: #818cf8; /* Indigo-400 */
   --color-phantasm-glow: #7000ff;

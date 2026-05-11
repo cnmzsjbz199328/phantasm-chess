@@ -16,6 +16,7 @@ import { Board } from "./components/3d/Board";
 import { PieceManager } from "./components/3d/PieceManager";
 import { UIOverlay } from "./components/UIOverlay";
 import { useChessEngine } from "./hooks/useChessEngine";
+import { Maximize2, Shield, Sword, Terminal, Zap, Cpu, Settings, Layers } from "lucide-react";
 
 export default function App() {
   const chess = useChessEngine();
@@ -37,40 +38,43 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen bg-phantasm-bg flex overflow-hidden font-sans text-slate-200">
-      {/* Left Navigation Rail */}
-      <nav className="w-20 border-r border-white/10 flex flex-col items-center py-8 gap-10 bg-phantasm-rail z-20">
-        <div className="w-10 h-10 bg-phantasm-accent rounded-lg flex items-center justify-center shadow-lg shadow-phantasm-accent/20">
-          <div className="w-6 h-6 border-2 border-white rotate-45"></div>
+      {/* Left Navigation Rail (Cinematic Navigation Rail from Spec) */}
+      <nav className="w-20 border-r border-white/5 flex flex-col items-center py-8 gap-8 bg-phantasm-rail z-20">
+        <div className="w-12 h-12 bg-phantasm-accent rounded-xl flex items-center justify-center shadow-lg shadow-phantasm-accent/20 cursor-pointer hover:scale-105 transition-transform">
+          <Terminal size={24} className="text-white" />
         </div>
         <div className="flex flex-col gap-8 opacity-40">
-          <div className="w-6 h-6 border-2 border-white rounded-sm"></div>
-          <div className="w-6 h-6 border-2 border-white rounded-full"></div>
-          <div className="w-6 h-6 border-t-2 border-l-2 border-white"></div>
-          <div className="w-6 h-6 bg-white"></div>
+          <button className="p-2 hover:opacity-100 transition-opacity"><Cpu size={20} /></button>
+          <button className="p-2 hover:opacity-100 transition-opacity"><Layers size={20} /></button>
+          <button className="p-2 hover:opacity-100 transition-opacity"><Zap size={20} /></button>
+          <button className="p-2 hover:opacity-100 transition-opacity"><Settings size={20} /></button>
         </div>
-        <div className="mt-auto mb-4 opacity-20 text-[10px] uppercase tracking-widest rotate-180" style={{ writingMode: "vertical-rl" }}>
-          PHANTASM_V1.0
+        <div className="mt-auto mb-4 opacity-20 text-[10px] uppercase font-mono tracking-widest rotate-180" style={{ writingMode: "vertical-rl" }}>
+          SYS_PHANTASM_OS
         </div>
       </nav>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Header */}
-        <header className="h-20 border-b border-white/10 flex items-center px-10 justify-between bg-phantasm-bg/50 backdrop-blur-md z-20">
+        <header className="h-20 border-b border-white/5 flex items-center px-10 justify-between bg-phantasm-bg/80 backdrop-blur-xl z-20">
           <div>
-            <h1 className="text-2xl font-light tracking-[0.2em] uppercase text-white">
+            <h1 className="text-2xl font-light tracking-[0.2em] uppercase text-white flex items-center gap-4">
+              <Shield className="text-phantasm-accent-light" size={24} />
               幻影棋局 <span className="text-phantasm-accent-light font-bold">Phantasm Chess</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1">
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1 font-mono">
               Cinematic Visualization & Tactical Analysis Engine
             </p>
           </div>
           <div className="flex gap-4">
-            <div className="px-4 py-2 border border-white/10 rounded text-[11px] uppercase tracking-tighter bg-white/5">
-              System: Active
+            <div className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full text-[11px] uppercase tracking-wider bg-white/5">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Neural Link: Active
             </div>
-            <div className="px-4 py-2 border border-phantasm-accent/30 rounded text-[11px] uppercase tracking-tighter bg-phantasm-accent/10 text-phantasm-accent-light">
-              Render: R3F / GLSL
+            <div className="px-4 py-2 border border-phantasm-accent/30 rounded-full text-[11px] uppercase tracking-wider bg-phantasm-accent/10 text-phantasm-accent-light flex items-center gap-2">
+              <Sword size={14} />
+              Sim Ready
             </div>
           </div>
         </header>
@@ -89,20 +93,20 @@ export default function App() {
                 autoRotateSpeed={0.5}
               />
 
-              <color attach="background" args={["#0a0a0c"]} />
-              <fog attach="fog" args={["#0a0a0c", 5, 20]} />
+              <color attach="background" args={["#020912"]} />
+              <fog attach="fog" args={["#020912", 20, 40]} />
 
               {/* Lighting */}
-              <ambientLight intensity={0.2} />
+              <ambientLight intensity={0.3} />
               <spotLight 
-                position={[5, 10, 5]} 
-                angle={0.15} 
+                position={[10, 15, 10]} 
+                angle={0.25} 
                 penumbra={1} 
-                intensity={1.5} 
+                intensity={2} 
                 castShadow 
-                color="#6366f1"
+                color="#00d2ff"
               />
-              <pointLight position={[-5, 5, -5]} intensity={1} color="#7000ff" />
+              <pointLight position={[-10, 10, -10]} intensity={1.5} color="#ff0055" />
 
               {/* Core Elements */}
               <group rotation={[-0.1, 0, 0]}>
