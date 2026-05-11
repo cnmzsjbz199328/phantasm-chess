@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@theme {
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-phantasm-bg: #0a0a0c;
+  --color-phantasm-rail: #0f0f12;
+  --color-phantasm-card: #14151a;
+  --color-phantasm-accent: #6366f1; /* Indigo-500 */
+  --color-phantasm-accent-light: #818cf8; /* Indigo-400 */
+  --color-phantasm-glow: #7000ff;
+  --color-phantasm-piece-white: #00d2ff;
+  --color-phantasm-piece-black: #ff0055;
+  --color-phantasm-gold: #ffcc00;
+  --color-phantasm-silver: #e2e8f0;
+  --color-phantasm-obsidian: #0f172a;
+}
+
+:root {
+  background-color: var(--color-phantasm-bg);
+  color: #e2e8f0; /* slate-200 */
+  color-scheme: dark;
+}
+
+canvas {
+  touch-action: none;
+}
+
+.perspective-text {
+  perspective: 1000px;
+}
+
+@keyframes pulse-cyan {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-cyan {
+  animation: pulse-cyan 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
