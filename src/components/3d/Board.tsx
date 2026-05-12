@@ -2,8 +2,8 @@ import { useRef, useEffect } from "react";
 import * as THREE from "three";
 
 const SQUARE_GEO = new THREE.PlaneGeometry(1, 1);
-const DARK_MAT  = new THREE.MeshStandardMaterial({ color: "#0a0a1a", metalness: 0.5, roughness: 0.3, emissive: "#000000", emissiveIntensity: 0.5 });
-const LIGHT_MAT = new THREE.MeshStandardMaterial({ color: "#1a1a2a", metalness: 0.5, roughness: 0.3, emissive: "#001122", emissiveIntensity: 0.5 });
+const DARK_MAT  = new THREE.MeshStandardMaterial({ color: "#080810", metalness: 0.4, roughness: 0.5, emissive: "#000000", emissiveIntensity: 0.1 });
+const LIGHT_MAT = new THREE.MeshStandardMaterial({ color: "#111120", metalness: 0.4, roughness: 0.5, emissive: "#000810", emissiveIntensity: 0.1 });
 
 const ROTATION = new THREE.Euler(-Math.PI / 2, 0, 0);
 const ROTATION_Q = new THREE.Quaternion().setFromEuler(ROTATION);

@@ -2,17 +2,17 @@ import type { Side, PieceColorSet } from "./types";
 
 export const SIDE_COLORS: Record<Side, PieceColorSet> = {
   w: {
-    primary:   "#00d2ff",
-    secondary: "#c8d8e8",
-    accent:    "#ffcc00",
-    dark:      "#0a2540",
-    glow:      "#00f2ff",
+    primary:   "#2a8fa8",
+    secondary: "#8fa8b8",
+    accent:    "#a88a20",
+    dark:      "#071a2e",
+    glow:      "#2aaabf",
   },
   b: {
-    primary:   "#ff0055",
-    secondary: "#2a1a2e",
-    accent:    "#8e2de2",
-    dark:      "#1a0510",
-    glow:      "#ff0055",
+    primary:   "#a02040",
+    secondary: "#1e1020",
+    accent:    "#5c1e9e",
+    dark:      "#120308",
+    glow:      "#a02040",
   },
 };

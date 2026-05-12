@@ -78,6 +78,8 @@ interface PieceWrapperProps {
 function PieceWrapper({ position, type, color, isAttacking, isMoving, onImpact }: PieceWrapperProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [dissolve, setDissolve] = useState(0);
+  const onImpactRef = useRef(onImpact);
+  onImpactRef.current = onImpact;
 
   useEffect(() => {
     if (!groupRef.current) return;
@@ -92,7 +94,7 @@ function PieceWrapper({ position, type, color, isAttacking, isMoving, onImpact }
         val: 0, duration: 0.5,
         onUpdate() { setDissolve(proxy.val); },
       });
-      playAttackAnimation(type, group, onImpact);
+      playAttackAnimation(type, group, () => onImpactRef.current());
     } else if (isMoving) {
       const proxy = { val: 1 };
       setDissolve(1);
@@ -102,7 +104,9 @@ function PieceWrapper({ position, type, color, isAttacking, isMoving, onImpact }
       });
       gsap.from(group.position, { x: "+=0.04", duration: 0.15, repeat: 3, yoyo: true });
     }
-  }, [isAttacking, isMoving, type, onImpact]);
+  // onImpact intentionally excluded — kept current via ref to avoid re-firing on every render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAttacking, isMoving, type]);
 
   return (
     <group position={position}>
