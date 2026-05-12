@@ -20,7 +20,6 @@ export function VoxelPieceModel({ type, color, dissolve = 0 }: PieceModelProps) 
   const getMat = (hex: string) => ({
     uBaseColor: new THREE.Color(hex),
     uColor: new THREE.Color(c.glow),
-    transparent: true,
   });
 
   const renderPiece = () => {

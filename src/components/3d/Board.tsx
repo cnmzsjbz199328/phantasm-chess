@@ -62,12 +62,6 @@ export function Board() {
       <instancedMesh ref={darkRef}  args={[SQUARE_GEO, darkMat,  32]} />
       <instancedMesh ref={lightRef} args={[SQUARE_GEO, lightMat, 32]} />
 
-      {/* Outer frame */}
-      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[9, 9]} />
-        <meshStandardMaterial color={theme.board.frame} metalness={0.8} roughness={0.2} />
-      </mesh>
-
       <gridHelper args={[8, 8, theme.board.gridMain, theme.board.gridSub]} position={[0, 0.001, 0]} />
 
       {/* Stone pedestal — top at y=-0.1 (board frame), bottom at WORLD_GROUND_Y (-0.7) */}

@@ -104,7 +104,7 @@ export default function App() {
 
         {/* 3D Scene */}
         <div className="flex-1 relative z-10">
-          <Canvas shadows dpr={[1, 2]} gl={{ alpha: true }}>
+          <Canvas shadows dpr={[1, 2]}>
             <Suspense fallback={null}>
               <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />
               <OrbitControls
@@ -116,6 +116,7 @@ export default function App() {
                 autoRotateSpeed={0.5}
               />
 
+              <color attach="background" args={[theme.background]} />
               <fog attach="fog" args={[theme.fogColor, theme.fogNear, theme.fogFar]} />
 
               <ambientLight intensity={theme.ambientIntensity} />
@@ -162,7 +163,7 @@ export default function App() {
                 />
               </group>
 
-              <ContactShadows position={[0, -0.1, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
+              <ContactShadows position={[0, -0.049, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
               <Environment preset="city" />
 
               <EffectComposer enableNormalPass={false}>
