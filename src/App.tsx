@@ -16,6 +16,7 @@ import { cn } from "./lib/utils";
 export default function App() {
   const chess = useChessEngine();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [themeIdx, setThemeIdx] = useState(0);
   const theme = THEMES[themeIdx];
 
@@ -23,6 +24,7 @@ export default function App() {
     let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
       interval = setInterval(() => {
+        if (isAnimating) return;
         if (chess.currentStep < chess.history.length - 1) {
           chess.nextStep();
         } else {
@@ -31,7 +33,21 @@ export default function App() {
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, chess]);
+  }, [isPlaying, isAnimating, chess]);
+
+  const controlsLocked = isAnimating;
+  const handlePrevStep = () => {
+    if (!controlsLocked) chess.prevStep();
+  };
+  const handleNextStep = () => {
+    if (!controlsLocked) chess.nextStep();
+  };
+  const handlePlayPause = () => {
+    if (isPlaying || !controlsLocked) setIsPlaying(!isPlaying);
+  };
+  const handleSkip = (step: number) => {
+    if (!controlsLocked) chess.goToStep(step);
+  };
 
   return (
     <ThemeContext.Provider value={theme}>
@@ -78,20 +94,32 @@ export default function App() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={chess.prevStep}
-              className="p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
+              onClick={handlePrevStep}
+              disabled={controlsLocked}
+              className={cn(
+                "p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95",
+                controlsLocked && "cursor-not-allowed opacity-45 hover:bg-white/5 active:scale-100"
+              )}
             >
               <SkipBack size={16} className="text-slate-300" />
             </button>
             <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="px-4 py-2 bg-phantasm-accent hover:bg-phantasm-accent-light rounded-lg transition-all active:scale-95 border border-white/10"
+              onClick={handlePlayPause}
+              disabled={!isPlaying && controlsLocked}
+              className={cn(
+                "px-4 py-2 bg-phantasm-accent hover:bg-phantasm-accent-light rounded-lg transition-all active:scale-95 border border-white/10",
+                !isPlaying && controlsLocked && "cursor-not-allowed opacity-60 hover:bg-phantasm-accent active:scale-100"
+              )}
             >
               {isPlaying ? <Pause size={16} fill="white" /> : <Play size={16} fill="white" />}
             </button>
             <button
-              onClick={chess.nextStep}
-              className="p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
+              onClick={handleNextStep}
+              disabled={controlsLocked}
+              className={cn(
+                "p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95",
+                controlsLocked && "cursor-not-allowed opacity-45 hover:bg-white/5 active:scale-100"
+              )}
             >
               <SkipForward size={16} className="text-slate-300" />
             </button>
@@ -159,7 +187,8 @@ export default function App() {
                 <PieceManager
                   boardState={chess.boardState}
                   lastMove={chess.lastMove}
-                  isCapture={chess.isCapture}
+                  currentStep={chess.currentStep}
+                  onAnimatingChange={setIsAnimating}
                 />
               </group>
 
@@ -182,7 +211,7 @@ export default function App() {
             narrative={chess.narrative}
             currentStep={chess.currentStep}
             history={chess.history}
-            onSkip={chess.goToStep}
+            onSkip={handleSkip}
           />
         </div>
 
