@@ -18,77 +18,65 @@ No test runner is configured.
 
 Copy `.env.example` to `.env` and set `GEMINI_API_KEY` for the Gemini AI narrative feature. The key is inlined at build time via `vite.config.ts` → `define`.
 
-## Architecture
+## Coding Standards
 
-### Multi-Page Vite App
+### TypeScript
 
-Two separate pages, both built from the same `node_modules`:
+- No `as any`. Use proper interfaces or discriminated unions. When bridging R3F JSX and custom shader materials, prefer `as unknown as ComponentType` or `declare module` augmentation over silencing the compiler.
+- Export types from `src/shared/` when they cross component boundaries. Keep component-local types inline.
+- Prefer `interface` for object shapes, `type` for unions and aliases.
 
-| Entry | URL | Purpose |
-|---|---|---|
-| `index.html` → `src/main.tsx` | `/` | Main chess viewer app |
-| `piece-showcase/index.html` → `piece-showcase/main.tsx` | `/piece-showcase/` | Standalone piece design sandbox |
+### Three.js Resource Lifecycle
 
-The `build.rollupOptions.input` in `vite.config.ts` declares both entries for production builds.
-
-### Main App Data Flow
-
-```
-useChessEngine (hook)
-  └─ chess.js parses PGN from src/data/matches.ts
-  └─ boardState: chess.js board() output (8×8 array of {type, color} | null)
-  └─ lastMove, isCapture: derived from history[currentStep]
-
-App.tsx
-  └─ PieceManager (consumes boardState, lastMove, isCapture)
-      └─ PieceWrapper (per-piece, handles attack/move animations via GSAP)
-          └─ VoxelPieceModel (renders geometry + DissolveMaterial shader)
-      └─ AttackEffect (spawned on capture impact, auto-removes after 1.5s)
-  └─ Board (static 8×8 board geometry)
-  └─ UIOverlay (HTML overlay: move history, narrative, playback controls)
-```
-
-### Custom Shader: DissolveMaterial
-
-Defined in `src/components/3d/Shaders.ts` using `shaderMaterial` from `@react-three/drei`. Must be imported (side-effect only) before use — the `extend({ DissolveMaterial })` call registers the JSX element `<dissolveMaterial>`. Uniforms: `uTime` (animated in `useFrame`), `uDissolve` (0–1), `uBaseColor`, `uColor` (glow edge), `uNoiseScale`.
-
-### Attack Animation Pattern
-
-GSAP mutates Three.js `Group.position` / `Group.rotation` directly. R3F renders every frame and picks up the changes without React re-renders. The pattern across both apps:
+Every `THREE.BufferGeometry` or `THREE.Material` created in a component **must** be disposed:
 
 ```typescript
-gsap.killTweensOf([p, r]);  // cancel any in-flight tween
-const tl = gsap.timeline({ onComplete: () => gsap.set([p, r], { x: 0, y: 0, z: 0 }) });
-tl.to(...).call(onImpact).to(...);  // onImpact triggers visual effect spawn
+// ✅ correct
+const mat = useMemo(() => new THREE.MeshStandardMaterial({ ... }), [dep]);
+useEffect(() => () => mat.dispose(), [mat]);
+
+// ❌ wrong — leaks GPU memory on every dep change or unmount
+const mat = useMemo(() => new THREE.MeshStandardMaterial({ ... }), [dep]);
 ```
 
-### Piece Showcase (`piece-showcase/`)
+Module-level singletons (created once, never recreated) do not need disposal hooks.
 
-Isolated from the main app. Key files:
+Use `instancedMesh` for any geometry repeated more than ~4 times in a scene. Populate matrices in a single `useEffect`, set `instanceMatrix.needsUpdate = true` after writing.
 
-- `HumanoidPiece.tsx` — full-limb humanoid piece models (box/cylinder geometry), one component per piece type
-- `attackAnimations.ts` — `playAttackAnimation(pieceType, group, onImpact)` — same GSAP pattern as main app
-- `AttackEffect.tsx` — particle systems (`ParticleBurst`), expanding rings (`ExpandingRing`), flash sphere, light pillar; each effect unmounts via `onComplete` callback after 1.15s
-- `PieceShowcase.tsx` — orchestrates 12 pieces (6 types × 2 colors), manages `effects[]` state, routes click → attack trigger → impact → effect spawn
+### React Three Fiber Patterns
 
-The showcase imports `DissolveMaterial` from the main app at `../src/components/3d/Shaders`.
+- Avoid `useState` / `setState` for values that change every frame. Use `useRef` and mutate directly; R3F picks up changes on the next render.
+- Guard `useFrame` callbacks early when the hot path can be skipped:
 
-### Color System
+```typescript
+useFrame(() => {
+  if (!ref.current || !isActive) return;
+  // ...
+});
+```
 
-Both apps use the same two-sided palette:
+- Use a `wasActive` ref to flush a final update when a condition transitions to false, then skip all subsequent frames.
+- Never create `THREE` objects (geometries, materials, vectors) inside `useFrame`.
 
-| Role | White (`"w"`) | Black (`"b"`) |
-|---|---|---|
-| Primary | `#00d2ff` Cyber Cyan | `#ff0055` Crimson |
-| Secondary | `#c8d8e8` Silver | `#2a1a2e` Obsidian |
-| Accent | `#ffcc00` Gold | `#8e2de2` Purple |
-| Dark | `#0a2540` Navy | `#1a0510` Deep Black |
-| Glow | `#00f2ff` | `#ff0055` |
+### GSAP + R3F Animation
 
-### Tailwind
+Mutate `Group.position` / `Group.rotation` via GSAP; R3F renders the result every frame without React re-renders. Always kill in-flight tweens before starting a new one:
 
-Uses Tailwind v4 with the `@tailwindcss/vite` plugin (no `tailwind.config.js`). Custom design tokens (`bg-phantasm-bg`, `bg-phantasm-accent`, etc.) are defined in `src/index.css`.
+```typescript
+gsap.killTweensOf([posRef, rotRef]);
+const tl = gsap.timeline({ onComplete: () => gsap.set([posRef, rotRef], { x: 0, y: 0, z: 0 }) });
+```
 
-### Path Alias
+### Component Design
 
-`@/*` resolves to the project root. Use `@/src/...` or `@/piece-showcase/...`.
+- One component per file. Keep render functions under ~150 lines; split into sub-components otherwise.
+- Scene sub-components that are only used within a single parent file may be defined in the same file (e.g., `Ground`, `Tower` inside `WorldStage.tsx`).
+- Shared pure utilities (deterministic noise, math helpers) belong in `src/shared/`. Do not duplicate across pages.
+
+### Shared Code Between Pages
+
+The two pages (`src/` and `piece-showcase/`) share code via relative imports. Import from `src/shared/` or `src/components/` only — never import from `piece-showcase/` into `src/`.
+
+### Styling
+
+Tailwind utility classes for all HTML/DOM elements. Avoid inline `style={{}}` objects in production components (acceptable in the `piece-showcase` sandbox). Do not add a `tailwind.config.js`; custom tokens go in `src/index.css` under `@layer base` / CSS variables.
