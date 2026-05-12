@@ -180,7 +180,7 @@ export function HumanoidPieceModel({ type, color, dissolve = 0 }: HumanoidPieceP
     );
 
     if (t === "n") return (
-      <group>
+      <group rotation={[0, color === "w" ? Math.PI : 0, 0]}>
         <mesh position={[0, 0.28, 0]}><boxGeometry args={[0.3, 0.36, 0.7]} /><DM {...m(cv.sec)} /></mesh>
         {([-0.1, 0.1] as number[]).flatMap(x =>
           ([-0.26, 0.26] as number[]).map((z) => (
