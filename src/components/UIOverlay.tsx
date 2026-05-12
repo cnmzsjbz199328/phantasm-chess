@@ -10,61 +10,33 @@ interface UIProps {
 
 export function UIOverlay({ narrative, currentStep, history, onSkip }: UIProps) {
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col justify-end p-8 z-10 font-sans">
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-end px-8 pb-6 z-10 font-sans">
 
-      {/* Narrative — top center, plain text */}
+      {/* Narrative — barely-there ambient inscription */}
       {narrative && (
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 w-full max-w-2xl text-center animate-in fade-in duration-700 pointer-events-none">
-          <p
-            className="text-xl text-white/70 font-light leading-relaxed tracking-wide"
-            style={{ textShadow: "0 1px 12px rgba(0,0,0,0.9)" }}
-          >
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 w-full max-w-lg text-center pointer-events-none">
+          <p className="text-[10px] text-white/20 font-light tracking-[0.4em] uppercase leading-loose">
             {narrative}
           </p>
         </div>
       )}
 
-      {/* Bottom row: timeline + move log */}
-      <div className="flex justify-between items-end gap-8">
-
-        {/* Timeline scrubber */}
-        <div className="flex-1 flex gap-1 h-1.5 items-end">
-          {history.map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex-1 transition-all duration-500 cursor-pointer pointer-events-auto rounded-full",
-                i <= currentStep
-                  ? "h-3 bg-phantasm-accent-light opacity-100"
-                  : "h-1.5 bg-white/10 opacity-40 hover:opacity-80 hover:h-2"
-              )}
-              onClick={() => onSkip(i)}
-            />
-          ))}
-        </div>
-
-        {/* Move log — plain text grid */}
-        <div className="w-56 pointer-events-auto max-h-52 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-3 gap-x-3 gap-y-0.5">
-            {history.map((move, i) => (
-              <button
-                key={i}
-                onClick={() => onSkip(i)}
-                className={cn(
-                  "text-[10px] font-mono py-1 text-left transition-all duration-200",
-                  i === currentStep
-                    ? "text-phantasm-accent-light font-bold"
-                    : "text-white/25 hover:text-white/60"
-                )}
-                style={i === currentStep ? { textShadow: "0 0 8px rgba(99,102,241,0.8)" } : undefined}
-              >
-                {move.san}
-              </button>
-            ))}
-          </div>
-        </div>
-
+      {/* Timeline scrubber */}
+      <div className="flex gap-px h-4 items-end pb-px">
+        {history.map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex-1 transition-all duration-400 cursor-pointer pointer-events-auto rounded-full",
+              i <= currentStep
+                ? "h-2.5 bg-phantasm-accent-light/50"
+                : "h-1 bg-white/10 hover:bg-white/25 hover:h-1.5"
+            )}
+            onClick={() => onSkip(i)}
+          />
+        ))}
       </div>
+
     </div>
   );
 }

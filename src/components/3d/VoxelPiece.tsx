@@ -161,12 +161,19 @@ export function VoxelPieceModel({ type, color, dissolve = 0 }: PieceModelProps) 
     }
   };
 
+  const wasDissolving = useRef(false);
+
   useFrame((state) => {
     if (!meshRef.current) return;
+    const isDissolving = dissolve > 0.001;
+    if (!isDissolving && !wasDissolving.current) return;
+    wasDissolving.current = isDissolving;
+
+    const t = isDissolving ? state.clock.getElapsedTime() : 0;
     meshRef.current.traverse((child: THREE.Object3D) => {
       const mat = (child as THREE.Mesh).material as any;
       if (mat?.type === "ShaderMaterial") {
-        mat.uniforms.uTime.value = state.clock.getElapsedTime();
+        if (isDissolving) mat.uniforms.uTime.value = t;
         mat.uniforms.uDissolve.value = dissolve;
       }
     });

@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { VoxelPieceModel } from "../src/components/3d/VoxelPiece";
 import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
+import { VoxelWorld } from "./VoxelWorld";
 import "../src/components/3d/Shaders";
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -265,7 +266,7 @@ export function PieceShowcase() {
           />
         ))}
 
-        <gridHelper args={[40, 40, "#060f1e", "#060f1e"]} position={[0, -3, 0]} />
+        <VoxelWorld />
 
         <OrbitControls
           autoRotate={autoRotate}
