@@ -20,6 +20,7 @@ interface SparkleConfig {
 }
 
 export interface WorldTheme {
+  variant: "abyss" | "molten" | "frost" | "jade";
   ground: string;          // far ground plane (100×100 bedrock)
   courtyard: string;       // close-in paving (22×22)
   stone: string;           // battlement / post stone
@@ -96,6 +97,7 @@ export const THEMES: SceneTheme[] = [
       frame: "#050510", gridMain: "#333344", gridSub: "#111122",
     },
     world: {
+      variant: "abyss",
       ground: "#050810",
       courtyard: "#08101c",
       stone: "#0c1422",
@@ -146,6 +148,7 @@ export const THEMES: SceneTheme[] = [
       frame: "#140400", gridMain: "#7a3010", gridSub: "#2a0a00",
     },
     world: {
+      variant: "molten",
       ground: "#0a0300",
       courtyard: "#0e0500",
       stone: "#1a0c00",
@@ -196,6 +199,7 @@ export const THEMES: SceneTheme[] = [
       frame: "#060c18", gridMain: "#5080a8", gridSub: "#142040",
     },
     world: {
+      variant: "frost",
       ground: "#030810",
       courtyard: "#06101c",
       stone: "#0a1424",
@@ -246,6 +250,7 @@ export const THEMES: SceneTheme[] = [
       frame: "#030e06", gridMain: "#1e7040", gridSub: "#093020",
     },
     world: {
+      variant: "jade",
       ground: "#020a04",
       courtyard: "#060f08",
       stone: "#0c1810",
