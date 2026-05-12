@@ -2,7 +2,7 @@ import { useCallback, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import type { Move, Piece } from "chess.js";
-import { VoxelPieceModel } from "./VoxelPiece";
+import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
 import { indexToPosition } from "../../lib/utils";
 import { playAttackAnimation } from "../../shared/attackAnimations";
@@ -111,7 +111,7 @@ function PieceWrapper({ position, type, color, isAttacking, isMoving, onImpact }
   return (
     <group position={position}>
       <group ref={groupRef}>
-        <VoxelPieceModel type={type} color={color} dissolve={dissolve} />
+        <HumanoidPieceModel type={type} color={color} dissolve={dissolve} />
       </group>
     </group>
   );
