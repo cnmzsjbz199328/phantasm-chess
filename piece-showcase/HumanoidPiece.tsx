@@ -32,7 +32,7 @@ export function HumanoidPieceModel({
 
   useEffect(() => {
     if (attackTrigger === 0 || !groupRef.current) return;
-    playAttackAnimation(type, groupRef.current, () => onImpact?.());
+    playAttackAnimation(type, groupRef.current, null, () => onImpact?.());
   }, [attackTrigger]);
 
   // ── shader uniforms ───────────────────────────────────────────────────────
@@ -80,6 +80,12 @@ export function HumanoidPieceModel({
   const Head = ({ y = 1.11 }: { y?: number }) => (
     <mesh position={[0, y, 0]}><boxGeometry args={[0.24, 0.24, 0.22]} /><DM {...m(c.sec)} /></mesh>
   );
+  const RoyalBoot = ({ x }: { x: number }) => (
+    <mesh position={[x, 0.07, 0.08]}><boxGeometry args={[0.18, 0.12, 0.28]} /><DM {...m(c.dark)} /></mesh>
+  );
+  const RoyalGreave = ({ x }: { x: number }) => (
+    <mesh position={[x, 0.3, 0.09]}><boxGeometry args={[0.16, 0.36, 0.08]} /><DM {...m(c.pri)} /></mesh>
+  );
 
   const FullBody = ({ torsoW = 0.38 }: { torsoW?: number }) => (
     <>
@@ -116,6 +122,8 @@ export function HumanoidPieceModel({
     if (t === "k") return (
       <group>
         <FullBody torsoW={0.42} />
+        <RoyalBoot x={-0.11} /><RoyalBoot x={0.11} />
+        <RoyalGreave x={-0.11} /><RoyalGreave x={0.11} />
         <mesh position={[0, 0.65, -0.15]}><boxGeometry args={[0.54, 0.7, 0.04]} /><DM {...m(c.dark)} /></mesh>
         <mesh position={[0, 0.73, 0.12]}><boxGeometry args={[0.3, 0.3, 0.02]} /><DM {...m(c.pri)} /></mesh>
         <mesh position={[0, 0.54, 0.12]}><boxGeometry args={[0.4, 0.07, 0.02]} /><DM {...m(c.acc)} /></mesh>
@@ -134,8 +142,18 @@ export function HumanoidPieceModel({
 
     if (t === "q") return (
       <group>
+        <RoyalBoot x={-0.1} /><RoyalBoot x={0.1} />
+        <mesh position={[-0.1, 0.29, 0]}><boxGeometry args={[0.13, 0.36, 0.12]} /><DM {...m(c.sec)} /></mesh>
+        <mesh position={[0.1, 0.29, 0]}><boxGeometry args={[0.13, 0.36, 0.12]} /><DM {...m(c.sec)} /></mesh>
+        <mesh position={[-0.1, 0.3, 0.09]}><boxGeometry args={[0.12, 0.3, 0.06]} /><DM {...m(c.pri)} /></mesh>
+        <mesh position={[0.1, 0.3, 0.09]}><boxGeometry args={[0.12, 0.3, 0.06]} /><DM {...m(c.pri)} /></mesh>
         <mesh position={[0, 0.05, 0]}><cylinderGeometry args={[0.4, 0.44, 0.1, 12]} /><DM {...m(c.dark)} /></mesh>
-        <mesh position={[0, 0.3, 0]}><cylinderGeometry args={[0.33, 0.4, 0.5, 12]} /><DM {...m(c.pri)} /></mesh>
+        <mesh position={[0, 0.48, 0]}><boxGeometry args={[0.34, 0.1, 0.18]} /><DM {...m(c.pri)} /></mesh>
+        <mesh position={[-0.24, 0.28, 0]} rotation={[0, 0, -0.08]}><boxGeometry args={[0.12, 0.44, 0.2]} /><DM {...m(c.pri)} /></mesh>
+        <mesh position={[0.24, 0.28, 0]} rotation={[0, 0, 0.08]}><boxGeometry args={[0.12, 0.44, 0.2]} /><DM {...m(c.pri)} /></mesh>
+        <mesh position={[0, 0.27, -0.13]}><boxGeometry args={[0.38, 0.46, 0.06]} /><DM {...m(c.dark)} /></mesh>
+        <mesh position={[-0.09, 0.28, 0.13]} rotation={[0.08, 0, -0.04]}><boxGeometry args={[0.13, 0.42, 0.04]} /><DM {...m(c.pri)} /></mesh>
+        <mesh position={[0.09, 0.28, 0.13]} rotation={[0.08, 0, 0.04]}><boxGeometry args={[0.13, 0.42, 0.04]} /><DM {...m(c.pri)} /></mesh>
         <mesh position={[0, 0.59, 0]}><cylinderGeometry args={[0.18, 0.31, 0.16, 12]} /><DM {...m(c.sec)} /></mesh>
         <mesh position={[0, 0.78, 0]}><boxGeometry args={[0.36, 0.3, 0.22]} /><DM {...m(c.sec)} /></mesh>
         <mesh position={[0, 0.72, 0.12]}><boxGeometry args={[0.14, 0.42, 0.02]} /><DM {...m(c.acc)} /></mesh>

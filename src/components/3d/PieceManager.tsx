@@ -9,7 +9,7 @@ import { algebraicToIndex, indexToPosition } from "../../lib/utils";
 import { playAttackAnimation } from "../../shared/attackAnimations";
 import { playTravelAnimation, playPromotionPulse, playDeathAnimation } from "../../shared/pieceAnimations";
 import { SIDE_COLORS } from "../../shared/pieceColors";
-import type { Side, AttackEffectProps, Vec3 } from "../../shared/types";
+import type { Side, AttackEffectProps, Vec3, PieceRig } from "../../shared/types";
 
 interface EffectInstance extends Omit<AttackEffectProps, "onComplete"> {
   id: string;
@@ -358,7 +358,9 @@ function PieceWrapper({
 }: PieceWrapperProps) {
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
+  const rigRef = useRef<PieceRig | null>(null);
   const [dissolve, setDissolve] = useState(0);
+  const [locomotionActive, setLocomotionActive] = useState(false);
   const commandRef = useRef(command);
   const pieceRef = useRef(piece);
   const callbacksRef = useRef({ onWalkComplete, onCaptureComplete, onDeathComplete, onLand, onPromote, onImpact });
@@ -381,6 +383,7 @@ function PieceWrapper({
       model.rotation.set(0, 0, 0);
       model.scale.set(1, 1, 1);
       setDissolve(0);
+      setLocomotionActive(false);
       return;
     }
 
@@ -392,7 +395,9 @@ function PieceWrapper({
 
     if (activeCommand.kind === "walk") {
       group.position.set(...activePiece.position);
+      setLocomotionActive(true);
       playTravelAnimation(activePiece.type, group, model, activeCommand.to, () => {
+        setLocomotionActive(false);
         callbacksRef.current.onLand(activeCommand.to);
         playPromotionPulse(
           model,
@@ -407,8 +412,10 @@ function PieceWrapper({
 
     if (activeCommand.kind === "capture") {
       group.position.set(...activePiece.position);
+      setLocomotionActive(true);
       playTravelAnimation(activePiece.type, group, model, activeCommand.nearTo, () => {
-        playAttackAnimation(activePiece.type, model, () => callbacksRef.current.onImpact());
+        setLocomotionActive(false);
+        playAttackAnimation(activePiece.type, model, rigRef.current, () => callbacksRef.current.onImpact());
         gsap.to(group.position, {
           x: activeCommand.to[0],
           y: activeCommand.to[1],
@@ -438,12 +445,23 @@ function PieceWrapper({
       setDissolve,
       callbacksRef.current.onDeathComplete,
     );
+    setLocomotionActive(false);
   }, [command?.id]);
 
   return (
     <group ref={groupRef} position={piece.position}>
       <group ref={modelRef}>
-        <HumanoidPieceModel type={piece.type} color={piece.color} dissolve={dissolve} />
+        <HumanoidPieceModel
+          ref={rigRef}
+          type={piece.type}
+          color={piece.color}
+          dissolve={dissolve}
+          locomotion={{
+            active: locomotionActive,
+            intensity: piece.type === "k" ? 0.72 : piece.type === "q" ? 0.82 : 1,
+            speed: piece.type === "k" ? 8.5 : piece.type === "q" ? 9.5 : 12,
+          }}
+        />
       </group>
     </group>
   );
