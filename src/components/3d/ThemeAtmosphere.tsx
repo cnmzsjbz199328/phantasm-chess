@@ -671,6 +671,92 @@ function JadeAtmosphere({ world }: { world: WorldTheme }) {
   );
 }
 
+// ─── arena ────────────────────────────────────────────────────────────────────
+// Dusty rubble terrain; broken columns; golden banners.
+
+function ArenaTerrain({ color, emi }: { color: string; emi: string }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+
+  const blocks = useMemo(() => {
+    return Array.from({ length: 180 }, (_, i) => {
+      const angle = rng(i * 7.3) * Math.PI * 2;
+      const dist  = 13 + rng(i, i * 3) * 25;
+      const sx    = 0.5 + rng(i * 2) * 2.0;
+      const sy    = 0.2 + rng(i * 3, i) * 1.5;
+      const sz    = 0.5 + rng(i * 5) * 2.0;
+      return {
+        x: Math.cos(angle) * dist, z: Math.sin(angle) * dist,
+        y: G + sy / 2, sx, sy, sz,
+        ry: rng(i * 11) * Math.PI * 2,
+        rx: (rng(i * 13) - 0.5) * 0.3,
+      };
+    });
+  }, []);
+
+  const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const mat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color, roughness: 0.95, metalness: 0.05, emissive: emi, emissiveIntensity: 0.1 }),
+    [color, emi]
+  );
+
+  useEffect(() => () => geo.dispose(), [geo]);
+  useEffect(() => () => mat.dispose(), [mat]);
+
+  useEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const dummy = new THREE.Object3D();
+    blocks.forEach(({ x, y, z, sx, sy, sz, ry, rx }, i) => {
+      dummy.position.set(x, y, z);
+      dummy.scale.set(sx, sy, sz);
+      dummy.rotation.set(rx, ry, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [blocks]);
+
+  return <instancedMesh ref={ref} args={[geo, mat, blocks.length]} />;
+}
+
+function ArenaBanner({ x, z, color, seed }: { x: number; z: number; color: string; seed: number }) {
+  const h = 4.5;
+  const ry = rng(seed, 1) * Math.PI * 2;
+  return (
+    <group position={[x, G, z]} rotation={[0, ry, 0]}>
+      <mesh position={[0, h / 2, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, h, 8]} />
+        <meshStandardMaterial color="#3d2b1f" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.45, h - 0.8, 0]}>
+        <boxGeometry args={[0.9, 1.5, 0.05]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+      <mesh position={[0.45, h - 0.05, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.03, 0.03, 1.1, 8]} />
+        <meshStandardMaterial color="#3d2b1f" />
+      </mesh>
+    </group>
+  );
+}
+
+function ArenaAtmosphere({ world }: { world: WorldTheme }) {
+  const bannerPos = [
+    { x: -15, z: -15 }, { x: 15, z: -15 }, { x: -15, z: 15 }, { x: 15, z: 15 },
+    { x: 0, z: -18 }, { x: 0, z: 18 }, { x: -18, z: 0 }, { x: 18, z: 0 },
+  ];
+
+  return (
+    <group>
+      <ArenaTerrain color={world.terrain} emi={world.terrainEmissive} />
+      {bannerPos.map((pos, i) => (
+        <ArenaBanner key={i} x={pos.x} z={pos.z} color="#b22222" seed={i + 100} />
+      ))}
+      <Towers world={world} heightScale={1.2} widthScale={0.8} />
+    </group>
+  );
+}
+
 // ─── export ───────────────────────────────────────────────────────────────────
 
 export function ThemeAtmosphere() {
@@ -679,6 +765,7 @@ export function ThemeAtmosphere() {
     case "molten": return <MoltenAtmosphere world={world} />;
     case "frost":  return <FrostAtmosphere  world={world} />;
     case "jade":   return <JadeAtmosphere   world={world} />;
+    case "arena":  return <ArenaAtmosphere  world={world} />;
     default:       return <AbyssAtmosphere  world={world} />;
   }
 }

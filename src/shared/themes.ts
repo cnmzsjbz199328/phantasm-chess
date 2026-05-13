@@ -20,7 +20,7 @@ interface SparkleConfig {
 }
 
 export interface WorldTheme {
-  variant: "abyss" | "molten" | "frost" | "jade";
+  variant: "abyss" | "molten" | "frost" | "jade" | "arena";
   ground: string;          // far ground plane (100×100 bedrock)
   courtyard: string;       // close-in paving (22×22)
   stone: string;           // battlement / post stone
@@ -108,6 +108,57 @@ export const THEMES: SceneTheme[] = [
       glowB: "#ff0055",
       treeTrunk: "#060810",
       treeFoliage: "#020610",
+    },
+  },
+
+  // ─── 罗马斗兽场 ───────────────────────────────────────────────────────────────
+  // Golden hour in the ancient arena. Dusty sand, weathered travertine, and warm torches.
+  {
+    id: "arena",
+    nameCN: "罗马斗兽场",
+    nameEN: "Roman Colosseum",
+    dot: "#ffcc33",
+    backdrop:
+      "radial-gradient(circle at 50% 10%, rgba(255,180,60,0.18), transparent 30%), " +
+      "radial-gradient(circle at 20% 80%, rgba(120,60,20,0.15), transparent 30%), " +
+      "linear-gradient(145deg, #1a120a 0%, #2a1e12 50%, #120c06 100%)",
+    background: "#1a120a",
+    fogColor: "#1a120a",
+    fogNear: 15,
+    fogFar: 40,
+    ambientIntensity: 0.4,
+    spotColor: "#ffd480",
+    spotIntensity: 0.9,
+    pointColor: "#ff8040",
+    pointIntensity: 0.6,
+    starsCount: 300,
+    starsSaturation: 0.5,
+    starsSpeed: 0.02,
+    sparkles: [
+      { count: 40, scale: 12, size: 0.6, speed: 0.05, color: "#ffcc66", opacity: 0.25, posY: 1.0 },
+      { count: 15, scale: 6,  size: 0.3, speed: 0.03, color: "#ff8844", opacity: 0.18, posY: 0.5 },
+    ],
+    bloomThreshold: 0.6,
+    bloomIntensity: 0.4,
+    bloomRadius: 0.35,
+    board: {
+      dark: "#2a1a0d", light: "#d2b48c",
+      darkEmissive: "#1a0d00", lightEmissive: "#4a3a2a",
+      emissiveIntensity: 0.1,
+      frame: "#1a120a", gridMain: "#8b6b4d", gridSub: "#3d2b1f",
+    },
+    world: {
+      variant: "arena",
+      ground: "#2d241a",
+      courtyard: "#c2b280",
+      stone: "#d2b48c",
+      stoneEmissive: "#1a120a",
+      terrain: "#4a3c2a",
+      terrainEmissive: "#1a120a",
+      glowA: "#ffaa00",
+      glowB: "#cc4400",
+      treeTrunk: "#3d2b1f",
+      treeFoliage: "#1a120a",
     },
   },
 
