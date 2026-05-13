@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import type { ComponentType } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import "./Shaders";
@@ -26,7 +27,7 @@ export function HumanoidPieceModel({ type, color, dissolve = 0 }: HumanoidPieceP
     };
   }, [color]);
 
-  const DM = "dissolveMaterial" as any;
+  const DM = "dissolveMaterial" as unknown as ComponentType<Record<string, unknown>>;
   const m = (col: THREE.Color) => ({ uBaseColor: col, uColor: cv.glow });
 
   useFrame((state) => {
@@ -35,12 +36,12 @@ export function HumanoidPieceModel({ type, color, dissolve = 0 }: HumanoidPieceP
     if (!isDissolving && !wasDissolving.current) return;
     wasDissolving.current = isDissolving;
     const t = isDissolving ? state.clock.getElapsedTime() : 0;
-    groupRef.current.traverse((child: THREE.Object3D) => {
-      const mat = (child as THREE.Mesh).material as any;
-      if (mat?.type === "ShaderMaterial") {
-        if (isDissolving) mat.uniforms.uTime.value = t;
-        mat.uniforms.uDissolve.value = dissolve;
-      }
+    groupRef.current.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const mat = child.material;
+      if (!(mat instanceof THREE.ShaderMaterial)) return;
+      if (isDissolving) mat.uniforms.uTime.value = t;
+      mat.uniforms.uDissolve.value = dissolve;
     });
   });
 

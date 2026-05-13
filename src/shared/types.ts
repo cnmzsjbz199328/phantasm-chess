@@ -1,3 +1,4 @@
+export type Vec3 = [number, number, number];
 export type Side = "w" | "b";
 export type PieceType = "k" | "q" | "r" | "b" | "n" | "p";
 

@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { AttackEffectProps } from "../../shared/types";
@@ -130,6 +130,8 @@ function ParticleBurst({ color, count = 30, speed = 2.5, mode = "sphere", dur = 
     geometry.setAttribute("position", attr);
     return { geo: geometry, vel: velocities };
   }, [count, speed, mode]);
+
+  useEffect(() => () => geo.dispose(), [geo]);
 
   const ref = useRef<THREE.Points>(null);
   const t = useRef(0);

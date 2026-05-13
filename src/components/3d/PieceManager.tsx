@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
 import type { Move, Piece } from "chess.js";
@@ -6,12 +7,19 @@ import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
 import { algebraicToIndex, indexToPosition } from "../../lib/utils";
 import { playAttackAnimation } from "../../shared/attackAnimations";
-import type { Side, AttackEffectProps } from "../../shared/types";
-
-type Vec3 = [number, number, number];
+import { playTravelAnimation, playPromotionPulse, playDeathAnimation } from "../../shared/pieceAnimations";
+import { SIDE_COLORS } from "../../shared/pieceColors";
+import type { Side, AttackEffectProps, Vec3 } from "../../shared/types";
 
 interface EffectInstance extends Omit<AttackEffectProps, "onComplete"> {
   id: string;
+}
+
+interface LandingEffectInstance {
+  id: string;
+  position: Vec3;
+  pieceType: string;
+  pieceColor: Side;
 }
 
 interface VisualPiece {
@@ -23,9 +31,9 @@ interface VisualPiece {
 }
 
 type PieceCommand =
-  | { kind: "walk"; to: Vec3; promoteTo?: string }
-  | { kind: "capture"; nearTo: Vec3; to: Vec3; promoteTo?: string }
-  | { kind: "death" };
+  | { id: string; kind: "walk"; to: Vec3; promoteTo?: string }
+  | { id: string; kind: "capture"; nearTo: Vec3; to: Vec3; promoteTo?: string }
+  | { id: string; kind: "death"; hitFrom: Vec3 };
 
 interface PieceManagerProps {
   boardState: (Piece | null)[][];
@@ -79,11 +87,16 @@ function getPromotionType(move: Move): string | undefined {
   return move.promotion || undefined;
 }
 
+function createCommandId() {
+  return crypto.randomUUID();
+}
+
 export function PieceManager({ boardState, lastMove, currentStep, onAnimatingChange }: PieceManagerProps) {
   const boardPieces = useMemo(() => boardToVisualPieces(boardState), [boardState]);
   const [visualPieces, setVisualPieces] = useState<VisualPiece[]>(boardPieces);
   const [commands, setCommands] = useState<Record<string, PieceCommand>>({});
   const [effects, setEffects] = useState<EffectInstance[]>([]);
+  const [landingEffects, setLandingEffects] = useState<LandingEffectInstance[]>([]);
   const previousStepRef = useRef(currentStep);
   const visualPiecesRef = useRef(visualPieces);
   const boardPiecesRef = useRef(boardPieces);
@@ -110,6 +123,15 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     setEffects(prev => prev.filter(e => e.id !== id));
   }, []);
 
+  const addLandingEffect = useCallback((pos: Vec3, pieceType: string, pieceColor: Side) => {
+    const id = crypto.randomUUID();
+    setLandingEffects(prev => [...prev, { id, position: pos, pieceType, pieceColor }]);
+  }, []);
+
+  const removeLandingEffect = useCallback((id: string) => {
+    setLandingEffects(prev => prev.filter(e => e.id !== id));
+  }, []);
+
   const finishAnimation = useCallback(() => {
     pendingCompletionsRef.current.clear();
     setCommands({});
@@ -124,10 +146,10 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     }
   }, [finishAnimation]);
 
-  const startDeath = useCallback((pieceId: string) => {
+  const startDeath = useCallback((pieceId: string, hitFrom: Vec3) => {
     setCommands(prev => ({
       ...prev,
-      [pieceId]: { kind: "death" },
+      [pieceId]: { id: createCommandId(), kind: "death", hitFrom },
     }));
   }, []);
 
@@ -140,6 +162,7 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
       pendingCompletionsRef.current.clear();
       setCommands({});
       setEffects([]);
+      setLandingEffects([]);
       setVisualPieces(boardPieces);
       setAnimating(false);
       return;
@@ -160,12 +183,13 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     const castleRookSquares = getCastleRookSquares(lastMove);
 
     if (castleRookSquares) {
-      nextCommands[attacker.id] = { kind: "walk", to };
+      nextCommands[attacker.id] = { id: createCommandId(), kind: "walk", to };
       pending.add(`walk:${attacker.id}`);
 
       const rook = pieces.find(piece => piece.square === castleRookSquares.from);
       if (rook) {
         nextCommands[rook.id] = {
+          id: createCommandId(),
           kind: "walk",
           to: squareToPosition(castleRookSquares.to),
         };
@@ -175,6 +199,7 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
       const victimSquare = getCaptureSquare(lastMove);
       const victim = pieces.find(piece => piece.square === victimSquare);
       nextCommands[attacker.id] = {
+        id: createCommandId(),
         kind: "capture",
         nearTo: getNearTarget(from, to),
         to,
@@ -186,6 +211,7 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
       }
     } else {
       nextCommands[attacker.id] = {
+        id: createCommandId(),
         kind: "walk",
         to,
         promoteTo: getPromotionType(lastMove),
@@ -208,13 +234,14 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
           onWalkComplete={() => markComplete(`walk:${piece.id}`)}
           onCaptureComplete={() => markComplete(`capture:${piece.id}`)}
           onDeathComplete={() => markComplete(`death:${piece.id}`)}
+          onLand={(position) => addLandingEffect(position, piece.type, piece.color)}
           onPromote={(position, promoteTo) => addEffect(position, promoteTo, piece.color)}
           onImpact={() => {
             addEffect(squareToPosition(lastMove?.to ?? piece.square), piece.type, piece.color);
             if (lastMove?.captured) {
               const victimSquare = getCaptureSquare(lastMove);
               const victim = visualPiecesRef.current.find(p => p.square === victimSquare);
-              if (victim) startDeath(victim.id);
+              if (victim) startDeath(victim.id, squareToPosition(lastMove.from));
             }
           }}
         />
@@ -228,6 +255,15 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
           onComplete={() => removeEffect(eff.id)}
         />
       ))}
+      {landingEffects.map(eff => (
+        <LandingEffect
+          key={eff.id}
+          position={eff.position}
+          pieceType={eff.pieceType}
+          pieceColor={eff.pieceColor}
+          onComplete={() => removeLandingEffect(eff.id)}
+        />
+      ))}
     </group>
   );
 }
@@ -238,157 +274,77 @@ interface PieceWrapperProps {
   onWalkComplete: () => void;
   onCaptureComplete: () => void;
   onDeathComplete: () => void;
+  onLand: (position: Vec3) => void;
   onPromote: (position: Vec3, promoteTo: string) => void;
   onImpact: () => void;
 }
 
-function faceTarget(group: THREE.Group, target: Vec3) {
-  const dx = target[0] - group.position.x;
-  const dz = target[2] - group.position.z;
-  if (Math.abs(dx) + Math.abs(dz) > 0.001) {
-    group.rotation.y = Math.atan2(dx, dz);
-  }
-}
 
-function getTravelProfile(pieceType: string, isCaptureApproach = false) {
+function getLandingProfile(pieceType: string) {
   const t = pieceType.toLowerCase();
-  const durationScale = isCaptureApproach ? 0.78 : 1;
-
-  if (t === "n") return { duration: 0.48 * durationScale, lift: 0.62, sway: 0.08, ease: "power2.inOut" };
-  if (t === "r") return { duration: 0.46 * durationScale, lift: 0.04, sway: 0.03, ease: "power3.out" };
-  if (t === "b") return { duration: 0.42 * durationScale, lift: 0.18, sway: 0.05, ease: "sine.inOut" };
-  if (t === "q") return { duration: 0.44 * durationScale, lift: 0.22, sway: 0.06, ease: "power2.inOut" };
-  if (t === "k") return { duration: 0.48 * durationScale, lift: 0.1, sway: 0.025, ease: "power2.out" };
-  return { duration: 0.34 * durationScale, lift: 0.1, sway: 0.04, ease: "power2.out" };
+  if (t === "n") return { duration: 0.62, ringSpeed: 4.2, maxRadius: 1.25, height: 0.08, pulse: 0.95 };
+  if (t === "r") return { duration: 0.68, ringSpeed: 3.6, maxRadius: 1.45, height: 0.025, pulse: 1.0 };
+  if (t === "b") return { duration: 0.58, ringSpeed: 3.0, maxRadius: 1.0, height: 0.12, pulse: 0.55 };
+  if (t === "q") return { duration: 0.68, ringSpeed: 3.2, maxRadius: 1.25, height: 0.16, pulse: 0.7 };
+  if (t === "k") return { duration: 0.72, ringSpeed: 2.8, maxRadius: 1.18, height: 0.08, pulse: 0.65 };
+  return { duration: 0.44, ringSpeed: 3.5, maxRadius: 0.72, height: 0.04, pulse: 0.55 };
 }
 
-function playTravelAnimation(
-  pieceType: string,
-  group: THREE.Group,
-  model: THREE.Group,
-  to: Vec3,
-  onComplete: () => void,
-  isCaptureApproach = false,
-) {
-  const profile = getTravelProfile(pieceType, isCaptureApproach);
-  const t = pieceType.toLowerCase();
+function LandingEffect({
+  position,
+  pieceType,
+  pieceColor,
+  onComplete,
+}: {
+  position: Vec3;
+  pieceType: string;
+  pieceColor: Side;
+  onComplete: () => void;
+}) {
+  const ringRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const elapsed = useRef(0);
+  const done = useRef(false);
+  const profile = useMemo(() => getLandingProfile(pieceType), [pieceType]);
+  const colors = SIDE_COLORS[pieceColor];
 
-  faceTarget(group, to);
+  useFrame((_, dt) => {
+    elapsed.current += dt;
+    const p = Math.min(elapsed.current / profile.duration, 1);
 
-  const tl = gsap.timeline({ onComplete });
-  tl.to(group.position, {
-    x: to[0],
-    y: to[1],
-    z: to[2],
-    duration: profile.duration,
-    ease: profile.ease,
-  }, 0);
+    if (ringRef.current) {
+      const radius = Math.min(elapsed.current * profile.ringSpeed, profile.maxRadius);
+      ringRef.current.scale.setScalar(Math.max(radius, 0.001));
+      (ringRef.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (1 - p) * profile.pulse);
+    }
 
-  if (t === "n") {
-    tl.to(model.position, {
-      y: profile.lift,
-      duration: profile.duration * 0.5,
-      ease: "power2.out",
-      yoyo: true,
-      repeat: 1,
-    }, 0);
-    tl.to(model.rotation, {
-      x: -0.18,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    }, 0);
-  } else if (t === "r") {
-    tl.to(model.position, {
-      y: profile.lift,
-      duration: profile.duration * 0.25,
-      yoyo: true,
-      repeat: 3,
-      ease: "steps(1)",
-    }, 0);
-    tl.to(model.rotation, {
-      x: 0.08,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "power1.inOut",
-    }, 0);
-  } else if (t === "b" || t === "q") {
-    tl.to(model.position, {
-      y: profile.lift,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    }, 0);
-    tl.to(model.rotation, {
-      z: t === "q" ? 0.14 : 0.08,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    }, 0);
-  } else if (t === "k") {
-    tl.to(model.position, {
-      y: profile.lift,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    }, 0);
-    tl.to(model.rotation, {
-      z: 0.05,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "power1.inOut",
-    }, 0);
-  } else {
-    tl.to(model.position, {
-      y: profile.lift,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    }, 0);
-    tl.to(model.rotation, {
-      x: 0.1,
-      duration: profile.duration * 0.5,
-      yoyo: true,
-      repeat: 1,
-      ease: "sine.inOut",
-    }, 0);
-  }
+    if (glowRef.current) {
+      const pulse = Math.sin(p * Math.PI);
+      glowRef.current.scale.setScalar(0.32 + pulse * 0.38);
+      glowRef.current.position.y = profile.height + pulse * profile.height;
+      (glowRef.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, pulse * 0.38);
+    }
 
-  tl.to(model.rotation, {
-    y: profile.sway,
-    duration: profile.duration * 0.25,
-    yoyo: true,
-    repeat: 3,
-    ease: "sine.inOut",
-  }, 0);
+    if (!done.current && p >= 1) {
+      done.current = true;
+      onComplete();
+    }
+  });
+
+  return (
+    <group position={position}>
+      <mesh ref={ringRef} position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.001}>
+        <ringGeometry args={[0.75, 0.82, 48]} />
+        <meshBasicMaterial color={colors.glow} transparent opacity={0.6} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <mesh ref={glowRef} position={[0, profile.height, 0]}>
+        <sphereGeometry args={[0.18, 12, 12]} />
+        <meshBasicMaterial color={colors.accent} transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
+  );
 }
 
-function playPromotionPulse(
-  model: THREE.Group,
-  position: Vec3,
-  promoteTo: string | undefined,
-  onPromote: (position: Vec3, promoteTo: string) => void,
-  onComplete: () => void,
-) {
-  if (!promoteTo) {
-    onComplete();
-    return;
-  }
-
-  gsap.timeline({ onComplete })
-    .call(() => onPromote(position, promoteTo))
-    .to(model.position, { y: 0.18, duration: 0.14, ease: "power2.out" }, 0)
-    .to(model.scale, { x: 1.16, y: 1.16, z: 1.16, duration: 0.14, ease: "power2.out" }, 0)
-    .to(model.position, { y: 0, duration: 0.18, ease: "power2.in" }, 0.14)
-    .to(model.scale, { x: 1, y: 1, z: 1, duration: 0.18, ease: "power2.in" }, 0.14);
-}
 
 function PieceWrapper({
   piece,
@@ -396,23 +352,30 @@ function PieceWrapper({
   onWalkComplete,
   onCaptureComplete,
   onDeathComplete,
+  onLand,
   onPromote,
   onImpact,
 }: PieceWrapperProps) {
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
   const [dissolve, setDissolve] = useState(0);
-  const callbacksRef = useRef({ onWalkComplete, onCaptureComplete, onDeathComplete, onPromote, onImpact });
-  callbacksRef.current = { onWalkComplete, onCaptureComplete, onDeathComplete, onPromote, onImpact };
+  const commandRef = useRef(command);
+  const pieceRef = useRef(piece);
+  const callbacksRef = useRef({ onWalkComplete, onCaptureComplete, onDeathComplete, onLand, onPromote, onImpact });
+  commandRef.current = command;
+  pieceRef.current = piece;
+  callbacksRef.current = { onWalkComplete, onCaptureComplete, onDeathComplete, onLand, onPromote, onImpact };
 
   useEffect(() => {
     const group = groupRef.current;
     const model = modelRef.current;
+    const activeCommand = commandRef.current;
+    const activePiece = pieceRef.current;
     if (!group || !model) return;
 
-    if (!command) {
+    if (!activeCommand) {
       gsap.killTweensOf([group.position, group.rotation, model.position, model.rotation, model.scale]);
-      group.position.set(...piece.position);
+      group.position.set(...activePiece.position);
       group.rotation.set(0, 0, 0);
       model.position.set(0, 0, 0);
       model.rotation.set(0, 0, 0);
@@ -427,13 +390,14 @@ function PieceWrapper({
     model.scale.set(1, 1, 1);
     setDissolve(0);
 
-    if (command.kind === "walk") {
-      group.position.set(...piece.position);
-      playTravelAnimation(piece.type, group, model, command.to, () => {
+    if (activeCommand.kind === "walk") {
+      group.position.set(...activePiece.position);
+      playTravelAnimation(activePiece.type, group, model, activeCommand.to, () => {
+        callbacksRef.current.onLand(activeCommand.to);
         playPromotionPulse(
           model,
-          command.to,
-          command.promoteTo,
+          activeCommand.to,
+          activeCommand.promoteTo,
           callbacksRef.current.onPromote,
           callbacksRef.current.onWalkComplete,
         );
@@ -441,22 +405,22 @@ function PieceWrapper({
       return;
     }
 
-    if (command.kind === "capture") {
-      group.position.set(...piece.position);
-      playTravelAnimation(piece.type, group, model, command.nearTo, () => {
-        playAttackAnimation(piece.type, model, () => callbacksRef.current.onImpact());
+    if (activeCommand.kind === "capture") {
+      group.position.set(...activePiece.position);
+      playTravelAnimation(activePiece.type, group, model, activeCommand.nearTo, () => {
+        playAttackAnimation(activePiece.type, model, () => callbacksRef.current.onImpact());
         gsap.to(group.position, {
-          x: command.to[0],
-          y: command.to[1],
-          z: command.to[2],
+          x: activeCommand.to[0],
+          y: activeCommand.to[1],
+          z: activeCommand.to[2],
           duration: 0.28,
           delay: 0.28,
           ease: "power2.out",
           onComplete: () => {
             playPromotionPulse(
               model,
-              command.to,
-              command.promoteTo,
+              activeCommand.to,
+              activeCommand.promoteTo,
               callbacksRef.current.onPromote,
               callbacksRef.current.onCaptureComplete,
             );
@@ -466,17 +430,15 @@ function PieceWrapper({
       return;
     }
 
-    const proxy = { val: 0 };
-    gsap.to(proxy, {
-      val: 1,
-      duration: 0.42,
-      ease: "power2.in",
-      onUpdate: () => setDissolve(proxy.val),
-      onComplete: () => callbacksRef.current.onDeathComplete(),
-    });
-    gsap.to(model.position, { y: -0.25, duration: 0.42, ease: "power2.in" });
-    gsap.to(model.scale, { x: 0.82, y: 0.72, z: 0.82, duration: 0.42, ease: "power2.in" });
-  }, [command, piece.position, piece.type]);
+    playDeathAnimation(
+      activePiece.type,
+      activePiece.position,
+      activeCommand.hitFrom,
+      model,
+      setDissolve,
+      callbacksRef.current.onDeathComplete,
+    );
+  }, [command?.id]);
 
   return (
     <group ref={groupRef} position={piece.position}>
