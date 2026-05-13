@@ -30,7 +30,7 @@ export default function App() {
         } else {
           setIsPlaying(false);
         }
-      }, 3000);
+      }, 4500);
     }
     return () => clearInterval(interval);
   }, [isPlaying, isAnimating, chess]);

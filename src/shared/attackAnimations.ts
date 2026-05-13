@@ -23,6 +23,7 @@ export function playAttackAnimation(
   model: THREE.Group,
   rig: PieceRig | null,
   onImpact: () => void,
+  onComplete?: () => void,
 ): void {
   const t = pieceType.toLowerCase();
   const p = model.position;
@@ -34,6 +35,7 @@ export function playAttackAnimation(
     onComplete: () => {
       gsap.set([p, r], { x: 0, y: 0, z: 0 });
       if (rig) resetRig(rig);
+      onComplete?.();
     },
   });
 

@@ -18,6 +18,7 @@ interface ExpandingRingProps {
 function ExpandingRing({ color, y = 0, delay = 0, maxR = 2, speed = 3, thick = 0.045 }: ExpandingRingProps) {
   const ref = useRef<THREE.Mesh>(null);
   const t = useRef(-delay);
+  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(4), [color]);
   useFrame((_, dt) => {
     t.current += dt;
     if (t.current <= 0 || !ref.current) return;
@@ -28,7 +29,7 @@ function ExpandingRing({ color, y = 0, delay = 0, maxR = 2, speed = 3, thick = 0
   return (
     <mesh ref={ref} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.001}>
       <ringGeometry args={[1, 1 + thick, 48]} />
-      <meshBasicMaterial color={color} transparent opacity={1} side={THREE.DoubleSide} depthWrite={false} />
+      <meshBasicMaterial color={brightColor} transparent opacity={1} side={THREE.DoubleSide} depthWrite={false} toneMapped={false} />
     </mesh>
   );
 }
@@ -42,6 +43,7 @@ interface FlashSphereProps {
 function FlashSphere({ color, r = 0.3, dur = 0.28 }: FlashSphereProps) {
   const ref = useRef<THREE.Mesh>(null);
   const t = useRef(0);
+  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(5), [color]);
   useFrame((_, dt) => {
     t.current += dt;
     if (!ref.current) return;
@@ -52,7 +54,7 @@ function FlashSphere({ color, r = 0.3, dur = 0.28 }: FlashSphereProps) {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[r, 10, 10]} />
-      <meshBasicMaterial color={color} transparent opacity={1} depthWrite={false} />
+      <meshBasicMaterial color={brightColor} transparent opacity={1} depthWrite={false} toneMapped={false} />
     </mesh>
   );
 }
@@ -66,11 +68,12 @@ interface LightPillarProps {
 function LightPillar({ color, h = 4, dur = 0.6 }: LightPillarProps) {
   const ref = useRef<THREE.Mesh>(null);
   const t = useRef(0);
+  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(4), [color]);
   useFrame((_, dt) => {
     t.current += dt;
     if (!ref.current) return;
     const p = t.current / dur;
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, Math.sin(p * Math.PI) * 0.8);
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, Math.sin(p * Math.PI) * 0.9);
     const s = 0.5 + Math.sin(p * Math.PI) * 1.1;
     ref.current.scale.x = s;
     ref.current.scale.z = s;
@@ -78,9 +81,26 @@ function LightPillar({ color, h = 4, dur = 0.6 }: LightPillarProps) {
   return (
     <mesh ref={ref} position={[0, h / 2, 0]}>
       <cylinderGeometry args={[0.12, 0.35, h, 8]} />
-      <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
+      <meshBasicMaterial color={brightColor} transparent opacity={0} depthWrite={false} toneMapped={false} />
     </mesh>
   );
+}
+
+interface ImpactLightProps {
+  color: string;
+  intensity?: number;
+  dur?: number;
+}
+
+function ImpactLight({ color, intensity = 7, dur = 0.38 }: ImpactLightProps) {
+  const ref = useRef<THREE.PointLight>(null);
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (!ref.current) return;
+    ref.current.intensity = Math.max(0, intensity * (1 - t.current / dur));
+  });
+  return <pointLight ref={ref} color={color} intensity={intensity} distance={8} decay={2} />;
 }
 
 type BurstMode = "sphere" | "forward" | "radial" | "up";
@@ -151,7 +171,15 @@ function ParticleBurst({ color, count = 30, speed = 2.5, mode = "sphere", dur = 
 
   return (
     <points ref={ref} geometry={geo}>
-      <pointsMaterial size={size} color={color} transparent opacity={1} sizeAttenuation depthWrite={false} />
+      <pointsMaterial
+        size={size}
+        color={color}
+        transparent
+        opacity={1}
+        sizeAttenuation
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
     </points>
   );
 }
@@ -161,6 +189,7 @@ function ParticleBurst({ color, count = 30, speed = 2.5, mode = "sphere", dur = 
 function PawnEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
+      <ImpactLight color={acc} intensity={5} dur={0.28} />
       <FlashSphere color={glow} r={0.22} dur={0.22} />
       <ParticleBurst color={acc}     count={38} speed={3.2} mode="forward" dur={0.65} size={0.065} grav={4.5} />
       <ParticleBurst color="#ffffff" count={14} speed={2.0} mode="forward" dur={0.38} size={0.04}  grav={3.0} />
@@ -172,6 +201,7 @@ function PawnEffect({ glow, acc }: { glow: string; acc: string }) {
 function KnightEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
+      <ImpactLight color={glow} intensity={8} dur={0.42} />
       <FlashSphere   color={glow} r={0.22} />
       <ParticleBurst color={glow} count={48} speed={3.8} mode="radial" dur={0.72} size={0.08} grav={5.5} />
       <ExpandingRing color={glow} y={-1.4} maxR={2.8} speed={4.2} delay={0}   thick={0.06} />
@@ -184,6 +214,7 @@ function KnightEffect({ glow, acc }: { glow: string; acc: string }) {
 function BishopEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
+      <ImpactLight color={acc} intensity={7} dur={0.55} />
       <FlashSphere   color={glow} r={0.22} />
       <LightPillar   color={acc}  h={4.5}  dur={0.65} />
       <ParticleBurst color={acc}  count={30} speed={2.0} mode="up" dur={0.85} size={0.07} grav={1.5} />
@@ -196,6 +227,7 @@ function BishopEffect({ glow, acc }: { glow: string; acc: string }) {
 function RookEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
+      <ImpactLight color={glow} intensity={10} dur={0.4} />
       <FlashSphere   color={glow} r={0.22} />
       <ExpandingRing color={glow} y={-1.4} maxR={3.3} speed={4.8} delay={0}    thick={0.07} />
       <ExpandingRing color={acc}  y={-1.4} maxR={2.2} speed={3.6} delay={0.1}  thick={0.05} />
@@ -209,6 +241,7 @@ function RookEffect({ glow, acc }: { glow: string; acc: string }) {
 function QueenEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
+      <ImpactLight color={glow} intensity={12} dur={0.48} />
       <FlashSphere   color={glow} r={0.22} />
       <ExpandingRing color={glow} maxR={3.0} speed={3.5} delay={0}    thick={0.05} />
       <ExpandingRing color={acc}  maxR={2.1} speed={2.8} delay={0.08} thick={0.04} />
@@ -222,6 +255,7 @@ function QueenEffect({ glow, acc }: { glow: string; acc: string }) {
 function KingEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
+      <ImpactLight color={acc} intensity={9} dur={0.44} />
       <FlashSphere   color={glow} r={0.22} />
       <ExpandingRing color={acc}  maxR={2.6} speed={3.2} delay={0}    thick={0.055} />
       <ExpandingRing color={glow} maxR={1.7} speed={2.6} delay={0.12} thick={0.04} />

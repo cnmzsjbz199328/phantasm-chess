@@ -5,6 +5,7 @@ import gsap from "gsap";
 import type { Move, Piece } from "chess.js";
 import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
+import { ProjectileEffect } from "./ProjectileEffect";
 import { algebraicToIndex, indexToPosition } from "../../lib/utils";
 import { playAttackAnimation } from "../../shared/attackAnimations";
 import { playTravelAnimation, playPromotionPulse, playDeathAnimation } from "../../shared/pieceAnimations";
@@ -22,6 +23,16 @@ interface LandingEffectInstance {
   pieceColor: Side;
 }
 
+interface ProjectileInstance {
+  id: string;
+  from: Vec3;
+  to: Vec3;
+  pieceType: string;
+  pieceColor: Side;
+  victimId: string | null;
+  victimHitFrom: Vec3 | null;
+}
+
 interface VisualPiece {
   id: string;
   square: string;
@@ -32,8 +43,13 @@ interface VisualPiece {
 
 type PieceCommand =
   | { id: string; kind: "walk"; to: Vec3; promoteTo?: string }
-  | { id: string; kind: "capture"; nearTo: Vec3; to: Vec3; promoteTo?: string }
+  | { id: string; kind: "melee-capture"; nearTo: Vec3; to: Vec3; promoteTo?: string }
+  | { id: string; kind: "ranged-capture"; to: Vec3; promoteTo?: string }
   | { id: string; kind: "death"; hitFrom: Vec3 };
+
+function isRangedPiece(type: string): boolean {
+  return ["b", "r", "q"].includes(type.toLowerCase());
+}
 
 interface PieceManagerProps {
   boardState: (Piece | null)[][];
@@ -97,10 +113,12 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
   const [commands, setCommands] = useState<Record<string, PieceCommand>>({});
   const [effects, setEffects] = useState<EffectInstance[]>([]);
   const [landingEffects, setLandingEffects] = useState<LandingEffectInstance[]>([]);
+  const [projectiles, setProjectiles] = useState<ProjectileInstance[]>([]);
   const previousStepRef = useRef(currentStep);
   const visualPiecesRef = useRef(visualPieces);
   const boardPiecesRef = useRef(boardPieces);
   const pendingCompletionsRef = useRef<Set<string>>(new Set());
+  const rangedMoveRef = useRef<{ attackerId: string; to: Vec3; promoteTo?: string } | null>(null);
 
   useEffect(() => {
     visualPiecesRef.current = visualPieces;
@@ -132,6 +150,19 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     setLandingEffects(prev => prev.filter(e => e.id !== id));
   }, []);
 
+  const addProjectile = useCallback((
+    from: Vec3, to: Vec3,
+    pieceType: string, pieceColor: Side,
+    victimId: string | null, victimHitFrom: Vec3 | null,
+  ) => {
+    const id = crypto.randomUUID();
+    setProjectiles(prev => [...prev, { id, from, to, pieceType, pieceColor, victimId, victimHitFrom }]);
+  }, []);
+
+  const removeProjectile = useCallback((id: string) => {
+    setProjectiles(prev => prev.filter(p => p.id !== id));
+  }, []);
+
   const finishAnimation = useCallback(() => {
     pendingCompletionsRef.current.clear();
     setCommands({});
@@ -142,7 +173,22 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
   const markComplete = useCallback((token: string) => {
     pendingCompletionsRef.current.delete(token);
     if (pendingCompletionsRef.current.size === 0) {
-      finishAnimation();
+      const pending = rangedMoveRef.current;
+      if (pending) {
+        rangedMoveRef.current = null;
+        pendingCompletionsRef.current.add(`walk:${pending.attackerId}`);
+        setCommands(prev => ({
+          ...prev,
+          [pending.attackerId]: {
+            id: createCommandId(),
+            kind: "walk" as const,
+            to: pending.to,
+            promoteTo: pending.promoteTo,
+          },
+        }));
+      } else {
+        finishAnimation();
+      }
     }
   }, [finishAnimation]);
 
@@ -160,9 +206,11 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     const isForwardSingleStep = currentStep === previousStep + 1 && !!lastMove;
     if (!isForwardSingleStep || !lastMove) {
       pendingCompletionsRef.current.clear();
+      rangedMoveRef.current = null;
       setCommands({});
       setEffects([]);
       setLandingEffects([]);
+      setProjectiles([]);
       setVisualPieces(boardPieces);
       setAnimating(false);
       return;
@@ -198,13 +246,23 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     } else if (lastMove.captured) {
       const victimSquare = getCaptureSquare(lastMove);
       const victim = pieces.find(piece => piece.square === victimSquare);
-      nextCommands[attacker.id] = {
-        id: createCommandId(),
-        kind: "capture",
-        nearTo: getNearTarget(from, to),
-        to,
-        promoteTo: getPromotionType(lastMove),
-      };
+      if (isRangedPiece(attacker.type)) {
+        nextCommands[attacker.id] = {
+          id: createCommandId(),
+          kind: "ranged-capture",
+          to,
+          promoteTo: getPromotionType(lastMove),
+        };
+        rangedMoveRef.current = { attackerId: attacker.id, to, promoteTo: getPromotionType(lastMove) };
+      } else {
+        nextCommands[attacker.id] = {
+          id: createCommandId(),
+          kind: "melee-capture",
+          nearTo: getNearTarget(from, to),
+          to,
+          promoteTo: getPromotionType(lastMove),
+        };
+      }
       pending.add(`capture:${attacker.id}`);
       if (victim) {
         pending.add(`death:${victim.id}`);
@@ -237,11 +295,25 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
           onLand={(position) => addLandingEffect(position, piece.type, piece.color)}
           onPromote={(position, promoteTo) => addEffect(position, promoteTo, piece.color)}
           onImpact={() => {
-            addEffect(squareToPosition(lastMove?.to ?? piece.square), piece.type, piece.color);
-            if (lastMove?.captured) {
+            if (isRangedPiece(piece.type) && lastMove?.captured) {
+              const targetPos = squareToPosition(lastMove.to);
               const victimSquare = getCaptureSquare(lastMove);
               const victim = visualPiecesRef.current.find(p => p.square === victimSquare);
-              if (victim) startDeath(victim.id, squareToPosition(lastMove.from));
+              addProjectile(
+                piece.position,
+                targetPos,
+                piece.type,
+                piece.color,
+                victim?.id ?? null,
+                victim ? squareToPosition(lastMove.from) : null,
+              );
+            } else {
+              addEffect(squareToPosition(lastMove?.to ?? piece.square), piece.type, piece.color);
+              if (lastMove?.captured) {
+                const victimSquare = getCaptureSquare(lastMove);
+                const victim = visualPiecesRef.current.find(p => p.square === victimSquare);
+                if (victim) startDeath(victim.id, squareToPosition(lastMove.from));
+              }
             }
           }}
         />
@@ -262,6 +334,20 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
           pieceType={eff.pieceType}
           pieceColor={eff.pieceColor}
           onComplete={() => removeLandingEffect(eff.id)}
+        />
+      ))}
+      {projectiles.map(proj => (
+        <ProjectileEffect
+          key={proj.id}
+          from={proj.from}
+          to={proj.to}
+          pieceType={proj.pieceType}
+          pieceColor={proj.pieceColor}
+          onArrive={() => {
+            removeProjectile(proj.id);
+            addEffect(proj.to, proj.pieceType, proj.pieceColor);
+            if (proj.victimId) startDeath(proj.victimId, proj.victimHitFrom!);
+          }}
         />
       ))}
     </group>
@@ -410,7 +496,7 @@ function PieceWrapper({
       return;
     }
 
-    if (activeCommand.kind === "capture") {
+    if (activeCommand.kind === "melee-capture") {
       group.position.set(...activePiece.position);
       setLocomotionActive(true);
       playTravelAnimation(activePiece.type, group, model, activeCommand.nearTo, () => {
@@ -437,15 +523,29 @@ function PieceWrapper({
       return;
     }
 
-    playDeathAnimation(
-      activePiece.type,
-      activePiece.position,
-      activeCommand.hitFrom,
-      model,
-      setDissolve,
-      callbacksRef.current.onDeathComplete,
-    );
-    setLocomotionActive(false);
+    if (activeCommand.kind === "ranged-capture") {
+      group.position.set(...activePiece.position);
+      playAttackAnimation(
+        activePiece.type,
+        model,
+        rigRef.current,
+        () => callbacksRef.current.onImpact(),
+        () => callbacksRef.current.onCaptureComplete(),
+      );
+      return;
+    }
+
+    if (activeCommand.kind === "death") {
+      playDeathAnimation(
+        activePiece.type,
+        activePiece.position,
+        activeCommand.hitFrom,
+        model,
+        setDissolve,
+        callbacksRef.current.onDeathComplete,
+      );
+      setLocomotionActive(false);
+    }
   }, [command?.id]);
 
   return (

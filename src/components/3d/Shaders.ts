@@ -13,7 +13,7 @@ export const DissolveMaterial = shaderMaterial(
     uDissolve: 0, // 0 to 1
     uColor: new THREE.Color("#00f2ff"),
     uBaseColor: new THREE.Color("#ffffff"),
-    uNoiseScale: 15.0,
+    uNoiseScale: 4.0,
   },
   // Vertex Shader
   `
