@@ -607,22 +607,39 @@ function PieceWrapper({
 }
 
 function BenchedPieceWrapper({ piece }: { piece: BenchedPiece }) {
+  const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
+  const [locomotionActive, setLocomotionActive] = useState(false);
 
   useEffect(() => {
+    const group = groupRef.current;
     const model = modelRef.current;
-    if (!model || !piece.isSettling) return;
-    playGetUpAnimation(piece.type, model, () => {});
-  }, [piece.id, piece.isSettling, piece.type]);
+    if (!group || !model || !piece.isSettling) return;
+
+    group.position.set(...piece.fromPosition);
+
+    playGetUpAnimation(piece.type, model, () => {
+      setLocomotionActive(true);
+      playTravelAnimation(piece.type, group, model, piece.benchPosition, () => {
+        setLocomotionActive(false);
+      });
+    });
+  // piece.id is stable for the lifetime of this component instance
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [piece.id]);
 
   return (
-    <group position={piece.benchPosition}>
+    <group ref={groupRef} position={piece.benchPosition}>
       <group ref={modelRef}>
         <HumanoidPieceModel
           type={piece.type}
           color={piece.color}
           dissolve={0}
-          locomotion={{ active: false }}
+          locomotion={{
+            active: locomotionActive,
+            intensity: piece.type === "k" ? 0.72 : piece.type === "q" ? 0.82 : 1,
+            speed: piece.type === "k" ? 8.5 : piece.type === "q" ? 9.5 : 12,
+          }}
         />
       </group>
     </group>
