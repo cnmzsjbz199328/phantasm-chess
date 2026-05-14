@@ -10,6 +10,7 @@ import { UIOverlay } from "./components/UIOverlay";
 import { useChessEngine } from "./hooks/useChessEngine";
 import { Shield, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { THEMES } from "./shared/themes";
+import { THEME_MATCH_MAP } from "./data/matches";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -62,11 +63,15 @@ function CameraController({ isPlaying }: { isPlaying: boolean }) {
 }
 
 export default function App() {
-  const chess = useChessEngine();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [themeIdx, setThemeIdx] = useState(0);
   const theme = THEMES[themeIdx];
+  const chess = useChessEngine(THEME_MATCH_MAP[theme.id]);
+
+  useEffect(() => {
+    setIsPlaying(false);
+  }, [themeIdx]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;

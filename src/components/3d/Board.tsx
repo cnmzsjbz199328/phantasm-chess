@@ -55,7 +55,7 @@ export function Board() {
 
     if (darkRef.current)  darkRef.current.instanceMatrix.needsUpdate  = true;
     if (lightRef.current) lightRef.current.instanceMatrix.needsUpdate = true;
-  }, []);
+  }, [darkMat, lightMat]);
 
   return (
     <group>
