@@ -633,6 +633,13 @@ function PieceWrapper({
   );
 }
 
+// Half-width of the 9.8-unit stone pedestal — pieces jump off here
+const PEDESTAL_EDGE_X = 4.85;
+// Matches WorldStage WORLD_GROUND_Y
+const BENCH_GROUND_Y = -0.7;
+// Bench walk is 4× slower than board moves so the animation reads clearly
+const BENCH_SPEED = 4.0;
+
 function BenchedPieceWrapper({ piece }: { piece: BenchedPiece }) {
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
@@ -646,10 +653,38 @@ function BenchedPieceWrapper({ piece }: { piece: BenchedPiece }) {
     group.position.set(...piece.fromPosition);
 
     playGetUpAnimation(piece.type, model, () => {
+      // Stage 1: walk to pedestal edge (still on platform at y=0)
+      const edgeX = piece.color === "w" ? PEDESTAL_EDGE_X : -PEDESTAL_EDGE_X;
+      const edgeWaypoint: Vec3 = [edgeX, 0, piece.benchPosition[2]];
+
       setLocomotionActive(true);
-      playTravelAnimation(piece.type, group, model, piece.benchPosition, () => {
+      playTravelAnimation(piece.type, group, model, edgeWaypoint, () => {
         setLocomotionActive(false);
-      });
+
+        // Stage 2: jump off the platform edge
+        const hopDir = piece.color === "w" ? 1 : -1;
+        gsap.timeline({
+          onComplete: () => {
+            // Stage 3: walk to final bench slot at ground level
+            setLocomotionActive(true);
+            playTravelAnimation(piece.type, group, model, piece.benchPosition, () => {
+              setLocomotionActive(false);
+            }, false, BENCH_SPEED);
+          },
+        })
+          .to(group.position, {
+            y: 0.3,
+            x: edgeX + hopDir * 0.35,
+            duration: 0.25,
+            ease: "power2.out",
+          }, 0)
+          .to(group.position, {
+            y: BENCH_GROUND_Y,
+            x: edgeX + hopDir * 0.8,
+            duration: 0.45,
+            ease: "power3.in",
+          }, 0.25);
+      }, false, BENCH_SPEED);
     });
   // piece.id is stable for the lifetime of this component instance
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -29,8 +29,10 @@ export function playTravelAnimation(
   to: Vec3,
   onComplete: () => void,
   isCaptureApproach = false,
+  durationMultiplier = 1.0,
 ) {
   const profile = getTravelProfile(pieceType, isCaptureApproach);
+  const dur = profile.duration * durationMultiplier;
   const t = pieceType.toLowerCase();
 
   faceTarget(group, to);
@@ -40,21 +42,21 @@ export function playTravelAnimation(
     x: to[0],
     y: to[1],
     z: to[2],
-    duration: profile.duration,
+    duration: dur,
     ease: profile.ease,
   }, 0);
 
   if (t === "n") {
     tl.to(model.position, {
       y: profile.lift,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       ease: "power2.out",
       yoyo: true,
       repeat: 1,
     }, 0);
     tl.to(model.rotation, {
       x: -0.18,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "sine.inOut",
@@ -62,14 +64,14 @@ export function playTravelAnimation(
   } else if (t === "r") {
     tl.to(model.position, {
       y: profile.lift,
-      duration: profile.duration * 0.25,
+      duration: dur * 0.25,
       yoyo: true,
       repeat: 3,
       ease: "steps(1)",
     }, 0);
     tl.to(model.rotation, {
       x: 0.08,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "power1.inOut",
@@ -77,14 +79,14 @@ export function playTravelAnimation(
   } else if (t === "b" || t === "q") {
     tl.to(model.position, {
       y: profile.lift,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "sine.inOut",
     }, 0);
     tl.to(model.rotation, {
       z: t === "q" ? 0.14 : 0.08,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "sine.inOut",
@@ -92,14 +94,14 @@ export function playTravelAnimation(
   } else if (t === "k") {
     tl.to(model.position, {
       y: profile.lift,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "sine.inOut",
     }, 0);
     tl.to(model.rotation, {
       z: 0.05,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "power1.inOut",
@@ -107,14 +109,14 @@ export function playTravelAnimation(
   } else {
     tl.to(model.position, {
       y: profile.lift,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "sine.inOut",
     }, 0);
     tl.to(model.rotation, {
       x: 0.1,
-      duration: profile.duration * 0.5,
+      duration: dur * 0.5,
       yoyo: true,
       repeat: 1,
       ease: "sine.inOut",
@@ -123,7 +125,7 @@ export function playTravelAnimation(
 
   tl.to(model.rotation, {
     y: profile.sway,
-    duration: profile.duration * 0.25,
+    duration: dur * 0.25,
     yoyo: true,
     repeat: 3,
     ease: "sine.inOut",
