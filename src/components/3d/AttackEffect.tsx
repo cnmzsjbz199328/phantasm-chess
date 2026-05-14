@@ -4,183 +4,140 @@ import * as THREE from "three";
 import type { AttackEffectProps } from "../../shared/types";
 import { SIDE_COLORS } from "../../shared/pieceColors";
 
-// ── primitives ────────────────────────────────────────────────────────────────
+// ── module-level geometry singletons (never disposed) ─────────────────────────
 
-interface ExpandingRingProps {
+const BOARD_Y      = 0.01;
+const STRIP_T      = 0.07;
+const STRIP_INSET  = 0.5 - STRIP_T / 2;
+const STRIP_GEO_H  = new THREE.PlaneGeometry(1, STRIP_T);
+const STRIP_GEO_V  = new THREE.PlaneGeometry(STRIP_T, 1);
+const STRIP_ROT: [number, number, number] = [-Math.PI / 2, 0, 0];
+const SWEEP_GEO    = new THREE.PlaneGeometry(0.88, 0.28);
+const FILL_GEO     = new THREE.PlaneGeometry(1, 1);
+
+// ── SquareFill: full 1×1 plane that briefly floods the square with color ──────
+
+interface SquareFillProps {
   color: string;
-  y?: number;
+  dur?: number;
   delay?: number;
-  maxR?: number;
-  speed?: number;
-  thick?: number;
+  brightness?: number;
 }
 
-function ExpandingRing({ color, y = 0, delay = 0, maxR = 2, speed = 3, thick = 0.045 }: ExpandingRingProps) {
-  const ref = useRef<THREE.Mesh>(null);
-  const t = useRef(-delay);
-  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(4), [color]);
-  useFrame((_, dt) => {
-    t.current += dt;
-    if (t.current <= 0 || !ref.current) return;
-    const r = Math.min(t.current * speed, maxR);
-    ref.current.scale.setScalar(r);
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - r / maxR);
-  });
-  return (
-    <mesh ref={ref} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.001}>
-      <ringGeometry args={[1, 1 + thick, 48]} />
-      <meshBasicMaterial color={brightColor} transparent opacity={1} side={THREE.DoubleSide} depthWrite={false} toneMapped={false} />
-    </mesh>
+function SquareFill({ color, dur = 0.3, delay = 0, brightness = 5 }: SquareFillProps) {
+  const t           = useRef(-delay);
+  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(brightness), [color, brightness]);
+
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({
+      color:      brightColor,
+      transparent: true,
+      opacity:    0,
+      depthWrite: false,
+      side:       THREE.DoubleSide,
+      blending:   THREE.AdditiveBlending,
+      toneMapped: false,
+    }),
+    [brightColor],
   );
-}
+  useEffect(() => () => mat.dispose(), [mat]);
 
-interface FlashSphereProps {
-  color: string;
-  r?: number;
-  dur?: number;
-}
-
-function FlashSphere({ color, r = 0.3, dur = 0.28 }: FlashSphereProps) {
-  const ref = useRef<THREE.Mesh>(null);
-  const t = useRef(0);
-  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(5), [color]);
   useFrame((_, dt) => {
     t.current += dt;
-    if (!ref.current) return;
-    const p = t.current / dur;
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - p);
-    ref.current.scale.setScalar(1 + p * 2.5);
+    if (t.current <= 0) return;
+    mat.opacity = Math.sin(Math.min(t.current / dur, 1) * Math.PI) * 0.8;
   });
-  return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[r, 10, 10]} />
-      <meshBasicMaterial color={brightColor} transparent opacity={1} depthWrite={false} toneMapped={false} />
-    </mesh>
-  );
+
+  return <mesh geometry={FILL_GEO} material={mat} rotation={STRIP_ROT} position={[0, BOARD_Y, 0]} />;
 }
 
-interface LightPillarProps {
+// ── BorderFlash: 4-strip square border; size > 1 forms concentric rings ───────
+// scale=[size, 1, size] expands only X/Z so BOARD_Y stays in world space.
+
+interface BorderFlashProps {
   color: string;
-  h?: number;
   dur?: number;
-}
-
-function LightPillar({ color, h = 4, dur = 0.6 }: LightPillarProps) {
-  const ref = useRef<THREE.Mesh>(null);
-  const t = useRef(0);
-  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(4), [color]);
-  useFrame((_, dt) => {
-    t.current += dt;
-    if (!ref.current) return;
-    const p = t.current / dur;
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, Math.sin(p * Math.PI) * 0.9);
-    const s = 0.5 + Math.sin(p * Math.PI) * 1.1;
-    ref.current.scale.x = s;
-    ref.current.scale.z = s;
-  });
-  return (
-    <mesh ref={ref} position={[0, h / 2, 0]}>
-      <cylinderGeometry args={[0.12, 0.35, h, 8]} />
-      <meshBasicMaterial color={brightColor} transparent opacity={0} depthWrite={false} toneMapped={false} />
-    </mesh>
-  );
-}
-
-interface ImpactLightProps {
-  color: string;
-  intensity?: number;
-  dur?: number;
-}
-
-function ImpactLight({ color, intensity = 7, dur = 0.38 }: ImpactLightProps) {
-  const ref = useRef<THREE.PointLight>(null);
-  const t = useRef(0);
-  useFrame((_, dt) => {
-    t.current += dt;
-    if (!ref.current) return;
-    ref.current.intensity = Math.max(0, intensity * (1 - t.current / dur));
-  });
-  return <pointLight ref={ref} color={color} intensity={intensity} distance={8} decay={2} />;
-}
-
-type BurstMode = "sphere" | "forward" | "radial" | "up";
-
-interface ParticleBurstProps {
-  color: string;
-  count?: number;
-  speed?: number;
-  mode?: BurstMode;
-  dur?: number;
+  delay?: number;
   size?: number;
-  grav?: number;
+  brightness?: number;
 }
 
-function ParticleBurst({ color, count = 30, speed = 2.5, mode = "sphere", dur = 0.7, size = 0.07, grav = 3 }: ParticleBurstProps) {
-  const { geo, vel } = useMemo(() => {
-    const positions = new Float32Array(count * 3).fill(0);
-    const velocities = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      if (mode === "sphere") {
-        const th = Math.random() * Math.PI * 2;
-        const ph = Math.acos(2 * Math.random() - 1);
-        const r = speed * (0.5 + Math.random() * 0.5);
-        velocities[i * 3]     = Math.sin(ph) * Math.cos(th) * r;
-        velocities[i * 3 + 1] = Math.cos(ph) * r;
-        velocities[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * r;
-      } else if (mode === "forward") {
-        velocities[i * 3]     = (Math.random() - 0.5) * speed * 0.45;
-        velocities[i * 3 + 1] = (Math.random() - 0.1) * speed * 0.25;
-        velocities[i * 3 + 2] = (Math.random() * 0.6 + 0.4) * speed;
-      } else if (mode === "radial") {
-        const a = Math.random() * Math.PI * 2;
-        const r = speed * (0.4 + Math.random() * 0.6);
-        velocities[i * 3]     = Math.cos(a) * r;
-        velocities[i * 3 + 1] = Math.random() * speed * 0.35;
-        velocities[i * 3 + 2] = Math.sin(a) * r;
-      } else {
-        const a = Math.random() * Math.PI * 2;
-        velocities[i * 3]     = Math.cos(a) * speed * 0.4;
-        velocities[i * 3 + 1] = speed * (0.6 + Math.random() * 0.4);
-        velocities[i * 3 + 2] = Math.sin(a) * speed * 0.4;
-      }
-    }
-    const geometry = new THREE.BufferGeometry();
-    const attr = new THREE.BufferAttribute(positions, 3);
-    attr.setUsage(THREE.DynamicDrawUsage);
-    geometry.setAttribute("position", attr);
-    return { geo: geometry, vel: velocities };
-  }, [count, speed, mode]);
+function BorderFlash({ color, dur = 0.45, delay = 0, size = 1, brightness = 4 }: BorderFlashProps) {
+  const t           = useRef(-delay);
+  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(brightness), [color, brightness]);
 
-  useEffect(() => () => geo.dispose(), [geo]);
-
-  const ref = useRef<THREE.Points>(null);
-  const t = useRef(0);
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({
+      color:      brightColor,
+      transparent: true,
+      opacity:    0,
+      depthWrite: false,
+      side:       THREE.DoubleSide,
+      blending:   THREE.AdditiveBlending,
+      toneMapped: false,
+    }),
+    [brightColor],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
 
   useFrame((_, dt) => {
     t.current += dt;
-    if (!ref.current) return;
-    const arr = geo.attributes.position.array as Float32Array;
-    for (let i = 0; i < count; i++) {
-      arr[i * 3]     += vel[i * 3]     * dt;
-      arr[i * 3 + 1] += vel[i * 3 + 1] * dt - grav * dt * t.current;
-      arr[i * 3 + 2] += vel[i * 3 + 2] * dt;
-    }
-    geo.attributes.position.needsUpdate = true;
-    (ref.current.material as THREE.PointsMaterial).opacity = Math.max(0, 1 - t.current / dur);
+    if (t.current <= 0) return;
+    mat.opacity = Math.sin(Math.min(t.current / dur, 1) * Math.PI) * 0.9;
   });
 
   return (
-    <points ref={ref} geometry={geo}>
-      <pointsMaterial
-        size={size}
-        color={color}
-        transparent
-        opacity={1}
-        sizeAttenuation
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
+    <group scale={[size, 1, size]}>
+      <mesh geometry={STRIP_GEO_H} material={mat} rotation={STRIP_ROT} position={[0,            BOARD_Y, -STRIP_INSET]} />
+      <mesh geometry={STRIP_GEO_H} material={mat} rotation={STRIP_ROT} position={[0,            BOARD_Y,  STRIP_INSET]} />
+      <mesh geometry={STRIP_GEO_V} material={mat} rotation={STRIP_ROT} position={[-STRIP_INSET, BOARD_Y,  0           ]} />
+      <mesh geometry={STRIP_GEO_V} material={mat} rotation={STRIP_ROT} position={[ STRIP_INSET, BOARD_Y,  0           ]} />
+    </group>
+  );
+}
+
+// ── BishopRisingEffect: square border frame that rises up through the piece ───
+
+interface BishopRisingProps {
+  color: string;
+  dur?: number;
+}
+
+function BishopRisingEffect({ color, dur = 0.65 }: BishopRisingProps) {
+  const groupRef    = useRef<THREE.Group>(null);
+  const t           = useRef(0);
+  const brightColor = useMemo(() => new THREE.Color(color).multiplyScalar(4), [color]);
+
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({
+      color:      brightColor,
+      transparent: true,
+      opacity:    0,
+      depthWrite: false,
+      side:       THREE.DoubleSide,
+      blending:   THREE.AdditiveBlending,
+      toneMapped: false,
+    }),
+    [brightColor],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
+
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (!groupRef.current) return;
+    const p = Math.min(t.current / dur, 1);
+    groupRef.current.position.y = p * 2.2;
+    mat.opacity = Math.sin(p * Math.PI) * 0.85;
+  });
+
+  return (
+    <group ref={groupRef}>
+      <mesh geometry={STRIP_GEO_H} material={mat} rotation={STRIP_ROT} position={[0,            0, -STRIP_INSET]} />
+      <mesh geometry={STRIP_GEO_H} material={mat} rotation={STRIP_ROT} position={[0,            0,  STRIP_INSET]} />
+      <mesh geometry={STRIP_GEO_V} material={mat} rotation={STRIP_ROT} position={[-STRIP_INSET, 0,  0           ]} />
+      <mesh geometry={STRIP_GEO_V} material={mat} rotation={STRIP_ROT} position={[ STRIP_INSET, 0,  0           ]} />
+      <mesh geometry={SWEEP_GEO}   material={mat} rotation={STRIP_ROT} />
+    </group>
   );
 }
 
@@ -189,11 +146,8 @@ function ParticleBurst({ color, count = 30, speed = 2.5, mode = "sphere", dur = 
 function PawnEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
-      <ImpactLight color={acc} intensity={5} dur={0.28} />
-      <FlashSphere color={glow} r={0.22} dur={0.22} />
-      <ParticleBurst color={acc}     count={38} speed={3.2} mode="forward" dur={0.65} size={0.065} grav={4.5} />
-      <ParticleBurst color="#ffffff" count={14} speed={2.0} mode="forward" dur={0.38} size={0.04}  grav={3.0} />
-      <FlashSphere   color={acc}     r={0.14}   dur={0.18} />
+      <SquareFill  color={acc}  dur={0.22} brightness={5} />
+      <BorderFlash color={glow} dur={0.45} size={1} />
     </>
   );
 }
@@ -201,12 +155,10 @@ function PawnEffect({ glow, acc }: { glow: string; acc: string }) {
 function KnightEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
-      <ImpactLight color={glow} intensity={8} dur={0.42} />
-      <FlashSphere   color={glow} r={0.22} />
-      <ParticleBurst color={glow} count={48} speed={3.8} mode="radial" dur={0.72} size={0.08} grav={5.5} />
-      <ExpandingRing color={glow} y={-1.4} maxR={2.8} speed={4.2} delay={0}   thick={0.06} />
-      <ExpandingRing color={acc}  y={-1.4} maxR={1.8} speed={3.2} delay={0.1} thick={0.04} />
-      <FlashSphere   color={acc}  r={0.32} dur={0.25} />
+      <SquareFill  color={glow} dur={0.28} brightness={7} />
+      <SquareFill  color={acc}  dur={0.18} brightness={4} delay={0.08} />
+      <BorderFlash color={glow} dur={0.50} size={1} />
+      <BorderFlash color={acc}  dur={0.42} size={2} delay={0.10} />
     </>
   );
 }
@@ -214,12 +166,9 @@ function KnightEffect({ glow, acc }: { glow: string; acc: string }) {
 function BishopEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
-      <ImpactLight color={acc} intensity={7} dur={0.55} />
-      <FlashSphere   color={glow} r={0.22} />
-      <LightPillar   color={acc}  h={4.5}  dur={0.65} />
-      <ParticleBurst color={acc}  count={30} speed={2.0} mode="up" dur={0.85} size={0.07} grav={1.5} />
-      <ExpandingRing color={acc}  maxR={1.6} speed={2.8} thick={0.035} />
-      <FlashSphere   color="#fff" r={0.28}   dur={0.22} />
+      <SquareFill        color={glow} dur={0.25} brightness={6} />
+      <BishopRisingEffect color={acc} dur={0.65} />
+      <BorderFlash       color={acc}  dur={0.55} size={1} />
     </>
   );
 }
@@ -227,13 +176,10 @@ function BishopEffect({ glow, acc }: { glow: string; acc: string }) {
 function RookEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
-      <ImpactLight color={glow} intensity={10} dur={0.4} />
-      <FlashSphere   color={glow} r={0.22} />
-      <ExpandingRing color={glow} y={-1.4} maxR={3.3} speed={4.8} delay={0}    thick={0.07} />
-      <ExpandingRing color={acc}  y={-1.4} maxR={2.2} speed={3.6} delay={0.1}  thick={0.05} />
-      <ExpandingRing color={glow} y={-1.4} maxR={1.2} speed={2.6} delay={0.22} thick={0.04} />
-      <ParticleBurst color={acc}  count={34} speed={2.8} mode="radial" dur={0.65} size={0.1} grav={6.5} />
-      <FlashSphere   color="#fff" r={0.42}   dur={0.2} />
+      <SquareFill  color={glow} dur={0.30} brightness={8} />
+      <BorderFlash color={glow} dur={0.55} size={1} delay={0}    brightness={6} />
+      <BorderFlash color={acc}  dur={0.48} size={2} delay={0.08} brightness={4} />
+      <BorderFlash color={glow} dur={0.40} size={3} delay={0.16} brightness={3} />
     </>
   );
 }
@@ -241,13 +187,11 @@ function RookEffect({ glow, acc }: { glow: string; acc: string }) {
 function QueenEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
-      <ImpactLight color={glow} intensity={12} dur={0.48} />
-      <FlashSphere   color={glow} r={0.22} />
-      <ExpandingRing color={glow} maxR={3.0} speed={3.5} delay={0}    thick={0.05} />
-      <ExpandingRing color={acc}  maxR={2.1} speed={2.8} delay={0.08} thick={0.04} />
-      <ExpandingRing color={glow} maxR={1.3} speed={2.2} delay={0.16} thick={0.035} />
-      <ParticleBurst color={glow} count={55} speed={3.2} mode="sphere" dur={0.9} size={0.07} grav={0.8} />
-      <FlashSphere   color={glow} r={0.5}    dur={0.32} />
+      <SquareFill  color={glow} dur={0.35} brightness={10} />
+      <BorderFlash color={glow} dur={0.60} size={1}   delay={0}    brightness={7} />
+      <BorderFlash color={acc}  dur={0.52} size={1.8} delay={0.07} brightness={5} />
+      <BorderFlash color={glow} dur={0.44} size={2.6} delay={0.14} brightness={4} />
+      <BorderFlash color={acc}  dur={0.36} size={3.4} delay={0.21} brightness={3} />
     </>
   );
 }
@@ -255,23 +199,20 @@ function QueenEffect({ glow, acc }: { glow: string; acc: string }) {
 function KingEffect({ glow, acc }: { glow: string; acc: string }) {
   return (
     <>
-      <ImpactLight color={acc} intensity={9} dur={0.44} />
-      <FlashSphere   color={glow} r={0.22} />
-      <ExpandingRing color={acc}  maxR={2.6} speed={3.2} delay={0}    thick={0.055} />
-      <ExpandingRing color={glow} maxR={1.7} speed={2.6} delay={0.12} thick={0.04} />
-      <ParticleBurst color={acc}  count={44} speed={2.8} mode="radial" dur={0.78} size={0.09} grav={3.5} />
-      <FlashSphere   color={acc}  r={0.55}   dur={0.38} />
+      <SquareFill  color={acc}  dur={0.32} brightness={8} />
+      <BorderFlash color={acc}  dur={0.55} size={1} />
+      <BorderFlash color={glow} dur={0.45} size={2} delay={0.12} />
     </>
   );
 }
 
-const EFFECT_DURATION = 1.15;
+const EFFECT_DURATION = 0.75;
 
 // ── main export ───────────────────────────────────────────────────────────────
 
 export function AttackEffect({ pieceType, pieceColor, position, onComplete }: AttackEffectProps) {
   const elapsed = useRef(0);
-  const done = useRef(false);
+  const done    = useRef(false);
 
   useFrame((_, dt) => {
     elapsed.current += dt;

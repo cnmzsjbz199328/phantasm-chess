@@ -5,7 +5,6 @@ import gsap from "gsap";
 import type { Move, Piece } from "chess.js";
 import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
-import { ProjectileEffect } from "./ProjectileEffect";
 import { MagicCircle, DormantCircle } from "./MagicCircle";
 import { algebraicToIndex, indexToPosition } from "../../lib/utils";
 import { getBenchSlot } from "../../shared/benchSlots";
@@ -403,17 +402,17 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
         />
       ))}
       {projectiles.map(proj => (
-        <ProjectileEffect
+        <PathWaveEffect
           key={proj.id}
           from={proj.from}
           to={proj.to}
           pieceType={proj.pieceType}
           pieceColor={proj.pieceColor}
           onArrive={() => {
-            removeProjectile(proj.id);
             addEffect(proj.to, proj.pieceType, proj.pieceColor);
             if (proj.victimId) startDeath(proj.victimId, proj.victimHitFrom!);
           }}
+          onComplete={() => removeProjectile(proj.id)}
         />
       ))}
       {ALL_BENCH_POSITIONS.w.map((pos, i) => <DormantCircle key={`dc-w-${i}`} position={pos} side="w" />)}
@@ -437,7 +436,138 @@ interface PieceWrapperProps {
 }
 
 
-// Module-level geometry singletons for SquareFlashEffect (never disposed)
+// ── path-wave effect (replaces ProjectileEffect) ──────────────────────────────
+
+function getRangedSpeed(pieceType: string): number {
+  const t = pieceType.toLowerCase();
+  if (t === "r") return 14;
+  if (t === "q") return 9;
+  return 10;
+}
+
+// One flashing square in the wave — identical geometry to SquareFlashEffect
+// but uses a bell-curve opacity and additive blending for a "light pulse" look.
+function WaveSquareFlash({
+  position,
+  pieceColor,
+  startDelay,
+  flashDur,
+  onComplete,
+}: {
+  position: Vec3;
+  pieceColor: Side;
+  startDelay: number;
+  flashDur: number;
+  onComplete?: () => void;
+}) {
+  const elapsed = useRef(-startDelay);
+  const done    = useRef(false);
+  const colors  = SIDE_COLORS[pieceColor];
+
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({
+      color:      new THREE.Color(colors.glow).multiplyScalar(3),
+      transparent: true,
+      opacity:    0,
+      depthWrite: false,
+      side:       THREE.DoubleSide,
+      blending:   THREE.AdditiveBlending,
+      toneMapped: false,
+    }),
+    [colors.glow],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
+
+  useFrame((_, dt) => {
+    elapsed.current += dt;
+    if (elapsed.current <= 0) return;
+    const p = Math.min(elapsed.current / flashDur, 1);
+    mat.opacity = Math.sin(p * Math.PI) * 0.9;
+    if (!done.current && p >= 1) {
+      done.current = true;
+      onComplete?.();
+    }
+  });
+
+  const [x, , z] = position;
+  return (
+    <group position={[x, -0.049, z]}>
+      <mesh geometry={FLASH_GEO_H} material={mat} rotation={FLASH_ROT} position={[0, 0, -FLASH_INSET]} />
+      <mesh geometry={FLASH_GEO_H} material={mat} rotation={FLASH_ROT} position={[0, 0,  FLASH_INSET]} />
+      <mesh geometry={FLASH_GEO_V} material={mat} rotation={FLASH_ROT} position={[-FLASH_INSET, 0, 0]} />
+      <mesh geometry={FLASH_GEO_V} material={mat} rotation={FLASH_ROT} position={[ FLASH_INSET, 0, 0]} />
+    </group>
+  );
+}
+
+interface PathWaveEffectProps {
+  from: Vec3;
+  to: Vec3;
+  pieceType: string;
+  pieceColor: Side;
+  onArrive: () => void;   // fires when wave front reaches target
+  onComplete: () => void; // fires when last flash finishes (safe to unmount)
+}
+
+// Squares along the attack path light up in sequence, then the target square
+// triggers the AttackEffect. No 3D geometry, no PointLight — flat planes only.
+function PathWaveEffect({ from, to, pieceType, pieceColor, onArrive, onComplete }: PathWaveEffectProps) {
+  const onArriveRef   = useRef(onArrive);
+  onArriveRef.current = onArrive;
+
+  const { squares, stepDelay, flashDur } = useMemo(() => {
+    const fromCol = Math.round(from[0] + 3.5);
+    const fromRow = Math.round(from[2] + 3.5);
+    const toCol   = Math.round(to[0]   + 3.5);
+    const toRow   = Math.round(to[2]   + 3.5);
+
+    const dCol = Math.sign(toCol - fromCol);
+    const dRow = Math.sign(toRow - fromRow);
+    const N    = Math.max(Math.abs(toCol - fromCol), Math.abs(toRow - fromRow));
+
+    const sqs: Vec3[] = [];
+    for (let i = 1; i <= N; i++) {
+      const col = fromCol + i * dCol;
+      const row = fromRow + i * dRow;
+      sqs.push([col - 3.5, 0, row - 3.5]);
+    }
+
+    const dist  = Math.sqrt((to[0] - from[0]) ** 2 + (to[2] - from[2]) ** 2);
+    const total = dist / getRangedSpeed(pieceType);
+    const step  = N > 0 ? total / N : total;
+
+    return { squares: sqs, stepDelay: step, flashDur: step * 1.8 };
+  }, [from, to, pieceType]);
+
+  const t         = useRef(0);
+  const fired     = useRef(false);
+  const arriveTime = (squares.length - 1) * stepDelay;
+
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (!fired.current && t.current >= arriveTime) {
+      fired.current = true;
+      onArriveRef.current();
+    }
+  });
+
+  return (
+    <>
+      {squares.map((pos, i) => (
+        <WaveSquareFlash
+          key={i}
+          position={pos}
+          pieceColor={pieceColor}
+          startDelay={i * stepDelay}
+          flashDur={flashDur}
+          onComplete={i === squares.length - 1 ? onComplete : undefined}
+        />
+      ))}
+    </>
+  );
+}
+
+// ── Module-level geometry singletons for SquareFlashEffect (never disposed) ───
 const FLASH_T = 0.07; // border strip thickness in world units
 const FLASH_GEO_H = new THREE.PlaneGeometry(1, FLASH_T); // horizontal strip (N/S edges)
 const FLASH_GEO_V = new THREE.PlaneGeometry(FLASH_T, 1); // vertical strip (W/E edges)

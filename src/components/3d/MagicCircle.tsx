@@ -66,14 +66,12 @@ const PALETTE = {
     dormantEmissive: "#1a0e00",
     activeEmissive:  "#ff8800",
     lineColor:       "#c8922a",
-    lightColor:      "#ff9922" as THREE.ColorRepresentation,
     sparkleColor:    "#ffcc66",
   },
   b: {
     dormantEmissive: "#080820",
     activeEmissive:  "#3355ff",
     lineColor:       "#5577ee",
-    lightColor:      "#4455ff" as THREE.ColorRepresentation,
     sparkleColor:    "#99aaff",
   },
 };
@@ -105,7 +103,6 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
   const outerRingRef = useRef<THREE.Mesh>(null);
   const midRingRef   = useRef<THREE.Mesh>(null);
   const innerRingRef = useRef<THREE.Mesh>(null);
-  const lightRef     = useRef<THREE.PointLight>(null);
   const [showSparkles, setShowSparkles] = useState(false);
   const rotSpeed = useRef({ outer: 0, mid: 0, inner: 0 });
   const palette  = PALETTE[side];
@@ -165,7 +162,6 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
     mats.hex.color.copy(lc);
     mats.ticks.color.copy(lc);
 
-    const lightProxy = { intensity: 0 };
     const tl = gsap.timeline({
       onComplete: () => { setShowSparkles(true); onReady(); },
     });
@@ -175,13 +171,7 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
     tl.to(mats.core,              { emissiveIntensity: 5.5, opacity: 0.9, duration: 0.7, ease: "power2.in" }, 0.15);
     tl.to([mats.hex, mats.ticks], { opacity: 0.85, duration: 0.7, ease: "power2.in" }, 0);
     tl.to(rotSpeed.current, { outer: 0.75, mid: -0.55, inner: 1.05, duration: 1.1, ease: "power2.in" }, 0.2);
-    tl.to(lightProxy, {
-      intensity: 4.5,
-      duration: 1.2,
-      ease: "power2.in",
-      onUpdate: () => { if (lightRef.current) lightRef.current.intensity = lightProxy.intensity; },
-    }, 0.3);
-    tl.to([mats.outer, mats.mid, mats.inner, mats.core], { emissiveIntensity: 8.0, duration: 0.3, ease: "power3.out" }, 1.1);
+    tl.to([mats.outer, mats.mid, mats.inner, mats.core], { emissiveIntensity: 10.0, duration: 0.3, ease: "power3.out" }, 1.1);
 
     return () => { tl.kill(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,17 +180,10 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
   // Dimming animation
   useEffect(() => {
     if (!dimming) return;
-    const lightProxy = { intensity: lightRef.current?.intensity ?? 0 };
     const tl = gsap.timeline();
     tl.to(rotSpeed.current, { outer: 0, mid: 0, inner: 0, duration: 1.4, ease: "power2.in" }, 0);
     tl.to([mats.outer, mats.mid, mats.inner, mats.core], { emissiveIntensity: 0.4, opacity: 0.12, duration: 1.2, ease: "power2.out" }, 0);
     tl.to([mats.hex, mats.ticks], { opacity: 0.06, duration: 1.0, ease: "power2.out" }, 0);
-    tl.to(lightProxy, {
-      intensity: 0,
-      duration: 1.0,
-      ease: "power2.out",
-      onUpdate: () => { if (lightRef.current) lightRef.current.intensity = lightProxy.intensity; },
-    }, 0);
     tl.call(() => setShowSparkles(false), [], 0.3);
     return () => { tl.kill(); };
   }, [dimming, mats]);
@@ -222,8 +205,6 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
         <mesh ref={innerRingRef} geometry={SHARED_GEOS.innerRing} material={mats.inner} />
         <mesh                    geometry={SHARED_GEOS.core}      material={mats.core}  />
       </group>
-
-      <pointLight ref={lightRef} color={palette.lightColor} intensity={0} distance={3.5} position={[0, 0.7, 0]} />
 
       {showSparkles && (
         <Sparkles
