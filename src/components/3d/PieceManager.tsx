@@ -65,6 +65,7 @@ interface PieceManagerProps {
   boardState: (Piece | null)[][];
   lastMove: Move | null;
   currentStep: number;
+  history: Move[];
   onAnimatingChange?: (isAnimating: boolean) => void;
 }
 
@@ -113,11 +114,35 @@ function getPromotionType(move: Move): string | undefined {
   return move.promotion || undefined;
 }
 
+function rebuildBenchFromHistory(history: Move[], upToStep: number): BenchedPiece[] {
+  const counts: { w: number; b: number } = { w: 0, b: 0 };
+  const result: BenchedPiece[] = [];
+  for (let i = 0; i <= upToStep; i++) {
+    const move = history[i];
+    if (!move?.captured) continue;
+    const capturedColor: Side = move.color === "w" ? "b" : "w";
+    const idx = counts[capturedColor]++;
+    const captureSquare = move.flags.includes("e")
+      ? `${move.to[0]}${move.from[1]}`
+      : move.to;
+    const [col, row] = algebraicToIndex(captureSquare);
+    result.push({
+      id: `bench-${capturedColor}${move.captured}-step${i}`,
+      type: move.captured,
+      color: capturedColor,
+      fromPosition: indexToPosition(col, row),
+      benchPosition: getBenchSlot(capturedColor, idx),
+      isSettling: false,
+    });
+  }
+  return result;
+}
+
 function createCommandId() {
   return crypto.randomUUID();
 }
 
-export function PieceManager({ boardState, lastMove, currentStep, onAnimatingChange }: PieceManagerProps) {
+export function PieceManager({ boardState, lastMove, currentStep, history, onAnimatingChange }: PieceManagerProps) {
   const boardPieces = useMemo(() => boardToVisualPieces(boardState), [boardState]);
   const [visualPieces, setVisualPieces] = useState<VisualPiece[]>(boardPieces);
   const [commands, setCommands] = useState<Record<string, PieceCommand>>({});
@@ -189,10 +214,6 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     }]);
   }, []);
 
-  const clearBench = useCallback(() => {
-    setBenchedPieces([]);
-    benchCountsRef.current = { w: 0, b: 0 };
-  }, []);
 
   const finishAnimation = useCallback(() => {
     pendingCompletionsRef.current.clear();
@@ -243,7 +264,12 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
       setLandingEffects([]);
       setProjectiles([]);
       setVisualPieces(boardPieces);
-      clearBench();
+      const rebuilt = rebuildBenchFromHistory(history, currentStep);
+      setBenchedPieces(rebuilt);
+      benchCountsRef.current = {
+        w: rebuilt.filter(p => p.color === "w").length,
+        b: rebuilt.filter(p => p.color === "b").length,
+      };
       setAnimating(false);
       return;
     }
@@ -312,7 +338,7 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
     pendingCompletionsRef.current = pending;
     setCommands(nextCommands);
     setAnimating(pending.size > 0);
-  }, [boardPieces, currentStep, lastMove, setAnimating]);
+  }, [boardPieces, currentStep, history, lastMove, setAnimating]);
 
   return (
     <group>

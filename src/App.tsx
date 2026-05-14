@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Canvas } from "@react-three/fiber";
+import { useState, useEffect, useRef } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
@@ -12,6 +12,56 @@ import { Shield, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { THEMES } from "./shared/themes";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+
+// Custom component to bridge arrow keys and OrbitControls
+function CameraController({ isPlaying }: { isPlaying: boolean }) {
+  const { camera, gl } = useThree();
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!controlsRef.current) return;
+      const controls = controlsRef.current;
+      const rotateStep = 0.15;
+      const angleStep = 0.08;
+
+      switch (e.key) {
+        case "ArrowLeft":
+          controls.setAzimuthalAngle(controls.getAzimuthalAngle() + rotateStep);
+          break;
+        case "ArrowRight":
+          controls.setAzimuthalAngle(controls.getAzimuthalAngle() - rotateStep);
+          break;
+        case "ArrowUp":
+          controls.setPolarAngle(Math.max(controls.minPolarAngle, controls.getPolarAngle() - angleStep));
+          break;
+        case "ArrowDown":
+          controls.setPolarAngle(Math.min(controls.maxPolarAngle, controls.getPolarAngle() + angleStep));
+          break;
+      }
+      controls.update();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      args={[camera, gl.domElement]}
+      enablePan={false}
+      enableDamping={true}
+      dampingFactor={0.1}
+      maxPolarAngle={Math.PI / 2.1}
+      minDistance={5}
+      maxDistance={15}
+      autoRotate={!isPlaying}
+      autoRotateSpeed={0.5}
+    />
+  );
+}
 
 export default function App() {
   const chess = useChessEngine();
@@ -135,14 +185,8 @@ export default function App() {
           <Canvas shadows dpr={[1, 2]}>
             <Suspense fallback={null}>
               <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />
-              <OrbitControls
-                enablePan={false}
-                maxPolarAngle={Math.PI / 2.1}
-                minDistance={5}
-                maxDistance={15}
-                autoRotate={!isPlaying}
-                autoRotateSpeed={0.5}
-              />
+              
+              <CameraController isPlaying={isPlaying} />
 
               <color attach="background" args={[theme.background]} />
               <fog attach="fog" args={[theme.fogColor, theme.fogNear, theme.fogFar]} />
@@ -188,6 +232,7 @@ export default function App() {
                   boardState={chess.boardState}
                   lastMove={chess.lastMove}
                   currentStep={chess.currentStep}
+                  history={chess.history}
                   onAnimatingChange={setIsAnimating}
                 />
               </group>
