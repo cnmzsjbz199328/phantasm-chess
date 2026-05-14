@@ -7,6 +7,7 @@ import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
 import { ProjectileEffect } from "./ProjectileEffect";
 import { algebraicToIndex, indexToPosition } from "../../lib/utils";
+import { getBenchSlot } from "../../shared/benchSlots";
 import { playAttackAnimation } from "../../shared/attackAnimations";
 import { playTravelAnimation, playPromotionPulse, playDeathAnimation } from "../../shared/pieceAnimations";
 import { SIDE_COLORS } from "../../shared/pieceColors";
@@ -39,6 +40,14 @@ interface VisualPiece {
   type: string;
   color: Side;
   position: Vec3;
+}
+
+interface BenchedPiece {
+  id: string;
+  type: string;
+  color: Side;
+  fromPosition: Vec3;
+  benchPosition: Vec3;
 }
 
 type PieceCommand =
@@ -114,6 +123,8 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
   const [effects, setEffects] = useState<EffectInstance[]>([]);
   const [landingEffects, setLandingEffects] = useState<LandingEffectInstance[]>([]);
   const [projectiles, setProjectiles] = useState<ProjectileInstance[]>([]);
+  const [benchedPieces, setBenchedPieces] = useState<BenchedPiece[]>([]);
+  const benchCountsRef = useRef<{ w: number; b: number }>({ w: 0, b: 0 });
   const previousStepRef = useRef(currentStep);
   const visualPiecesRef = useRef(visualPieces);
   const boardPiecesRef = useRef(boardPieces);
@@ -161,6 +172,24 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
 
   const removeProjectile = useCallback((id: string) => {
     setProjectiles(prev => prev.filter(p => p.id !== id));
+  }, []);
+
+  const addToBench = useCallback((piece: VisualPiece) => {
+    const side = piece.color;
+    const idx = benchCountsRef.current[side]++;
+    const benchPosition = getBenchSlot(side, idx);
+    setBenchedPieces(prev => [...prev, {
+      id: piece.id,
+      type: piece.type,
+      color: piece.color,
+      fromPosition: piece.position,
+      benchPosition,
+    }]);
+  }, []);
+
+  const clearBench = useCallback(() => {
+    setBenchedPieces([]);
+    benchCountsRef.current = { w: 0, b: 0 };
   }, []);
 
   const finishAnimation = useCallback(() => {
@@ -212,6 +241,7 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
       setLandingEffects([]);
       setProjectiles([]);
       setVisualPieces(boardPieces);
+      clearBench();
       setAnimating(false);
       return;
     }
@@ -291,7 +321,10 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
           command={commands[piece.id]}
           onWalkComplete={() => markComplete(`walk:${piece.id}`)}
           onCaptureComplete={() => markComplete(`capture:${piece.id}`)}
-          onDeathComplete={() => markComplete(`death:${piece.id}`)}
+          onDeathComplete={() => {
+            addToBench(piece);
+            markComplete(`death:${piece.id}`);
+          }}
           onLand={(position) => addLandingEffect(position, piece.type, piece.color)}
           onPromote={(position, promoteTo) => addEffect(position, promoteTo, piece.color)}
           onImpact={() => {
@@ -349,6 +382,9 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
             if (proj.victimId) startDeath(proj.victimId, proj.victimHitFrom!);
           }}
         />
+      ))}
+      {benchedPieces.map(bp => (
+        <BenchedPieceWrapper key={bp.id} piece={bp} />
       ))}
     </group>
   );
@@ -464,7 +500,8 @@ function PieceWrapper({
     if (!activeCommand) {
       gsap.killTweensOf([group.position, group.rotation, model.position, model.rotation, model.scale]);
       group.position.set(...activePiece.position);
-      group.rotation.set(0, 0, 0);
+      // Pieces by default face +Z. White at bottom (large Z) should face -Z.
+      group.rotation.set(0, activePiece.color === "w" ? Math.PI : 0, 0);
       model.position.set(0, 0, 0);
       model.rotation.set(0, 0, 0);
       model.scale.set(1, 1, 1);
@@ -561,6 +598,21 @@ function PieceWrapper({
             intensity: piece.type === "k" ? 0.72 : piece.type === "q" ? 0.82 : 1,
             speed: piece.type === "k" ? 8.5 : piece.type === "q" ? 9.5 : 12,
           }}
+        />
+      </group>
+    </group>
+  );
+}
+
+function BenchedPieceWrapper({ piece }: { piece: BenchedPiece }) {
+  return (
+    <group position={piece.benchPosition}>
+      <group>
+        <HumanoidPieceModel
+          type={piece.type}
+          color={piece.color}
+          dissolve={0}
+          locomotion={{ active: false }}
         />
       </group>
     </group>
