@@ -5,8 +5,6 @@ interface BoardTheme {
   lightEmissive: string;
   emissiveIntensity: number;
   frame: string;
-  gridMain: string;
-  gridSub: string;
 }
 
 interface SparkleConfig {
@@ -94,7 +92,7 @@ export const THEMES: SceneTheme[] = [
       dark: "#080810", light: "#111120",
       darkEmissive: "#000000", lightEmissive: "#000810",
       emissiveIntensity: 0.1,
-      frame: "#050510", gridMain: "#333344", gridSub: "#111122",
+      frame: "#050510",
     },
     world: {
       variant: "abyss",
@@ -145,7 +143,7 @@ export const THEMES: SceneTheme[] = [
       dark: "#2a1a0d", light: "#d2b48c",
       darkEmissive: "#1a0d00", lightEmissive: "#4a3a2a",
       emissiveIntensity: 0.1,
-      frame: "#1a120a", gridMain: "#8b6b4d", gridSub: "#3d2b1f",
+      frame: "#1a120a",
     },
     world: {
       variant: "arena",
@@ -196,7 +194,7 @@ export const THEMES: SceneTheme[] = [
       dark: "#180500", light: "#220800",
       darkEmissive: "#200000", lightEmissive: "#300800",
       emissiveIntensity: 0.22,
-      frame: "#140400", gridMain: "#7a3010", gridSub: "#2a0a00",
+      frame: "#140400",
     },
     world: {
       variant: "molten",
@@ -247,7 +245,7 @@ export const THEMES: SceneTheme[] = [
       dark: "#080e1c", light: "#0e1828",
       darkEmissive: "#020810", lightEmissive: "#081428",
       emissiveIntensity: 0.14,
-      frame: "#060c18", gridMain: "#5080a8", gridSub: "#142040",
+      frame: "#060c18",
     },
     world: {
       variant: "frost",
@@ -298,7 +296,7 @@ export const THEMES: SceneTheme[] = [
       dark: "#040e06", light: "#061808",
       darkEmissive: "#001806", lightEmissive: "#002008",
       emissiveIntensity: 0.14,
-      frame: "#030e06", gridMain: "#1e7040", gridSub: "#093020",
+      frame: "#030e06",
     },
     world: {
       variant: "jade",

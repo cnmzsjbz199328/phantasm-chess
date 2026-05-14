@@ -62,8 +62,6 @@ export function Board() {
       <instancedMesh ref={darkRef}  args={[SQUARE_GEO, darkMat,  32]} />
       <instancedMesh ref={lightRef} args={[SQUARE_GEO, lightMat, 32]} />
 
-      <gridHelper args={[8, 8, theme.board.gridMain, theme.board.gridSub]} position={[0, 0.001, 0]} />
-
       {/* Stone pedestal — top at y=-0.1 (board frame), bottom at WORLD_GROUND_Y (-0.7) */}
       <mesh position={[0, (WORLD_GROUND_Y - 0.1) / 2, 0]}>
         <boxGeometry args={[9.8, -0.1 - WORLD_GROUND_Y, 9.8]} />
