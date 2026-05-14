@@ -9,7 +9,7 @@ import { ProjectileEffect } from "./ProjectileEffect";
 import { algebraicToIndex, indexToPosition } from "../../lib/utils";
 import { getBenchSlot } from "../../shared/benchSlots";
 import { playAttackAnimation } from "../../shared/attackAnimations";
-import { playTravelAnimation, playPromotionPulse, playDeathAnimation } from "../../shared/pieceAnimations";
+import { playTravelAnimation, playPromotionPulse, playDeathAnimation, playGetUpAnimation } from "../../shared/pieceAnimations";
 import { SIDE_COLORS } from "../../shared/pieceColors";
 import type { Side, AttackEffectProps, Vec3, PieceRig } from "../../shared/types";
 
@@ -48,6 +48,7 @@ interface BenchedPiece {
   color: Side;
   fromPosition: Vec3;
   benchPosition: Vec3;
+  isSettling: boolean;
 }
 
 type PieceCommand =
@@ -184,6 +185,7 @@ export function PieceManager({ boardState, lastMove, currentStep, onAnimatingCha
       color: piece.color,
       fromPosition: piece.position,
       benchPosition,
+      isSettling: true,
     }]);
   }, []);
 
@@ -605,9 +607,17 @@ function PieceWrapper({
 }
 
 function BenchedPieceWrapper({ piece }: { piece: BenchedPiece }) {
+  const modelRef = useRef<THREE.Group>(null);
+
+  useEffect(() => {
+    const model = modelRef.current;
+    if (!model || !piece.isSettling) return;
+    playGetUpAnimation(piece.type, model, () => {});
+  }, [piece.id, piece.isSettling, piece.type]);
+
   return (
     <group position={piece.benchPosition}>
-      <group>
+      <group ref={modelRef}>
         <HumanoidPieceModel
           type={piece.type}
           color={piece.color}

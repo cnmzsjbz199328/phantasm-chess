@@ -130,6 +130,47 @@ export function playTravelAnimation(
   }, 0);
 }
 
+export function playGetUpAnimation(
+  pieceType: string,
+  model: THREE.Group,
+  onComplete: () => void,
+) {
+  const t = pieceType.toLowerCase();
+  const isHeavy = t === "k" || t === "r";
+  const delay = isHeavy ? 0.28 : 0.18;
+  const riseDuration = isHeavy ? 0.42 : 0.32;
+  const wobbleDuration = 0.22;
+
+  gsap.killTweensOf([model.position, model.rotation, model.scale]);
+
+  gsap.timeline({ onComplete })
+    .to(model.position, {
+      x: 0, y: 0, z: 0,
+      duration: riseDuration,
+      delay,
+      ease: "power2.out",
+    }, 0)
+    .to(model.rotation, {
+      x: 0, y: 0, z: 0,
+      duration: riseDuration,
+      delay,
+      ease: "power2.out",
+    }, 0)
+    .to(model.scale, {
+      x: 1, y: 1, z: 1,
+      duration: riseDuration,
+      delay,
+      ease: "back.out(1.4)",
+    }, 0)
+    .to(model.rotation, {
+      z: t === "k" ? 0.06 : 0.1,
+      duration: wobbleDuration * 0.5,
+      yoyo: true,
+      repeat: 3,
+      ease: "sine.inOut",
+    }, delay + riseDuration);
+}
+
 export function playPromotionPulse(
   model: THREE.Group,
   position: Vec3,
