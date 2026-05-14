@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
@@ -16,7 +16,6 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 // Custom component to bridge arrow keys and OrbitControls
 function CameraController({ isPlaying }: { isPlaying: boolean }) {
-  const { camera, gl } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
   useEffect(() => {
@@ -50,7 +49,6 @@ function CameraController({ isPlaying }: { isPlaying: boolean }) {
   return (
     <OrbitControls
       ref={controlsRef}
-      args={[camera, gl.domElement]}
       enablePan={false}
       enableDamping={true}
       dampingFactor={0.1}
