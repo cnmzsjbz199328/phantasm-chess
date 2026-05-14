@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
@@ -7,10 +7,13 @@ import { Board } from "./components/3d/Board";
 import { PieceManager } from "./components/3d/PieceManager";
 import { WorldStage } from "./components/3d/WorldStage";
 import { UIOverlay } from "./components/UIOverlay";
+import { IntroOverlay } from "./components/IntroOverlay";
+import { OutroOverlay } from "./components/OutroOverlay";
 import { useChessEngine } from "./hooks/useChessEngine";
 import { Shield, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { THEMES } from "./shared/themes";
 import { THEME_MATCH_MAP } from "./data/matches";
+import { THEME_META_MAP } from "./data/matchMeta";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -62,15 +65,20 @@ function CameraController({ isPlaying }: { isPlaying: boolean }) {
   );
 }
 
+type AppPhase = 'idle' | 'intro' | 'playing' | 'outro';
+
 export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [themeIdx, setThemeIdx] = useState(0);
+  const [appPhase, setAppPhase] = useState<AppPhase>('idle');
   const theme = THEMES[themeIdx];
   const chess = useChessEngine(THEME_MATCH_MAP[theme.id]);
+  const currentMeta = THEME_META_MAP[theme.id] ?? null;
 
   useEffect(() => {
     setIsPlaying(false);
+    setAppPhase('idle');
   }, [themeIdx]);
 
   useEffect(() => {
@@ -82,11 +90,12 @@ export default function App() {
           chess.nextStep();
         } else {
           setIsPlaying(false);
+          setAppPhase(currentMeta ? 'outro' : 'idle');
         }
       }, 4500);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, isAnimating, chess]);
+  }, [isPlaying, isAnimating, chess, currentMeta]);
 
   const controlsLocked = isAnimating;
   const handlePrevStep = () => {
@@ -96,11 +105,34 @@ export default function App() {
     if (!controlsLocked) chess.nextStep();
   };
   const handlePlayPause = () => {
-    if (isPlaying || !controlsLocked) setIsPlaying(!isPlaying);
+    if (appPhase === 'idle') {
+      chess.goToStep(0);
+      if (currentMeta) {
+        setAppPhase('intro');
+      } else {
+        setAppPhase('playing');
+        setIsPlaying(true);
+      }
+    } else if (appPhase === 'playing') {
+      if (isPlaying || !controlsLocked) setIsPlaying(!isPlaying);
+    }
   };
+  const handleIntroFinish = useCallback(() => {
+    setAppPhase('playing');
+    setIsPlaying(true);
+  }, []);
+  const handleOutroClose = useCallback(() => {
+    setAppPhase('idle');
+    chess.goToStep(0);
+  }, [chess]);
   const handleSkip = (step: number) => {
     if (!controlsLocked) chess.goToStep(step);
   };
+
+  const playButtonDisabled =
+    appPhase === 'intro' ||
+    appPhase === 'outro' ||
+    (appPhase === 'playing' && !isPlaying && controlsLocked);
 
   return (
     <ThemeContext.Provider value={theme}>
@@ -158,10 +190,10 @@ export default function App() {
             </button>
             <button
               onClick={handlePlayPause}
-              disabled={!isPlaying && controlsLocked}
+              disabled={playButtonDisabled}
               className={cn(
                 "px-4 py-2 bg-phantasm-accent hover:bg-phantasm-accent-light rounded-lg transition-all active:scale-95 border border-white/10",
-                !isPlaying && controlsLocked && "cursor-not-allowed opacity-60 hover:bg-phantasm-accent active:scale-100"
+                playButtonDisabled && "cursor-not-allowed opacity-60 hover:bg-phantasm-accent active:scale-100"
               )}
             >
               {isPlaying ? <Pause size={16} fill="white" /> : <Play size={16} fill="white" />}
@@ -262,6 +294,13 @@ export default function App() {
             onSkip={handleSkip}
           />
         </div>
+
+        {appPhase === 'intro' && currentMeta && (
+          <IntroOverlay meta={currentMeta} onFinish={handleIntroFinish} />
+        )}
+        {appPhase === 'outro' && currentMeta && (
+          <OutroOverlay meta={currentMeta} onClose={handleOutroClose} />
+        )}
 
         {/* Ambient glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
