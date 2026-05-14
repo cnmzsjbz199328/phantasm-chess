@@ -1,5 +1,5 @@
-import { forwardRef, useMemo, useRef, useImperativeHandle } from "react";
-import type { RefObject } from "react";
+import { forwardRef, useMemo, useRef, useImperativeHandle, useEffect } from "react";
+import type { RefObject, MutableRefObject } from "react";
 import type { ComponentType } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -10,7 +10,7 @@ import { SIDE_COLORS } from "../../shared/pieceColors";
 interface HumanoidPieceProps {
   type: string;
   color: Side;
-  dissolve?: number;
+  dissolveRef?: MutableRefObject<number>;
   locomotion?: {
     active: boolean;
     intensity?: number;
@@ -19,7 +19,7 @@ interface HumanoidPieceProps {
 }
 
 export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
-  function HumanoidPieceModel({ type, color, dissolve = 0, locomotion }, ref) {
+  function HumanoidPieceModel({ type, color, dissolveRef, locomotion }, ref) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
   const leftLegRef = useRef<THREE.Group>(null);
@@ -31,6 +31,16 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
   const weaponRef = useRef<THREE.Group>(null);
   const walkPhaseRef = useRef(0);
   const wasDissolving = useRef(false);
+  const dissolveTargets = useRef<THREE.ShaderMaterial[]>([]);
+
+  useEffect(() => {
+    dissolveTargets.current = [];
+    groupRef.current?.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material instanceof THREE.ShaderMaterial) {
+        dissolveTargets.current.push(child.material as THREE.ShaderMaterial);
+      }
+    });
+  }, [type]);
 
   useImperativeHandle(ref, () => ({
     body: bodyRef.current!,
@@ -107,17 +117,15 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
       }
     }
 
-    const isDissolving = dissolve > 0.001;
+    const d = dissolveRef?.current ?? 0;
+    const isDissolving = d > 0.001;
     if (!isDissolving && !wasDissolving.current) return;
     wasDissolving.current = isDissolving;
     const t = isDissolving ? state.clock.getElapsedTime() : 0;
-    groupRef.current.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
-      const mat = child.material;
-      if (!(mat instanceof THREE.ShaderMaterial)) return;
+    for (const mat of dissolveTargets.current) {
       if (isDissolving) mat.uniforms.uTime.value = t;
-      mat.uniforms.uDissolve.value = dissolve;
-    });
+      mat.uniforms.uDissolve.value = d;
+    }
   });
 
   // ── body helpers — lowercase functions, not React components (avoids remount on re-render) ──

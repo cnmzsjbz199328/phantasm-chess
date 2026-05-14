@@ -6,10 +6,11 @@ import type { Move, Piece } from "chess.js";
 import { HumanoidPieceModel } from "./HumanoidPiece";
 import { AttackEffect } from "./AttackEffect";
 import { ProjectileEffect } from "./ProjectileEffect";
+import { MagicCircle, DormantCircle } from "./MagicCircle";
 import { algebraicToIndex, indexToPosition } from "../../lib/utils";
 import { getBenchSlot } from "../../shared/benchSlots";
 import { playAttackAnimation } from "../../shared/attackAnimations";
-import { playTravelAnimation, playPromotionPulse, playDeathAnimation, playGetUpAnimation } from "../../shared/pieceAnimations";
+import { playTravelAnimation, playPromotionPulse, playDeathAnimation } from "../../shared/pieceAnimations";
 import { SIDE_COLORS } from "../../shared/pieceColors";
 import type { Side, AttackEffectProps, Vec3, PieceRig } from "../../shared/types";
 
@@ -141,6 +142,12 @@ function rebuildBenchFromHistory(history: Move[], upToStep: number): BenchedPiec
 function createCommandId() {
   return crypto.randomUUID();
 }
+
+// Pre-compute all 16 bench slot positions per side (constant for the lifetime of the app)
+const ALL_BENCH_POSITIONS: { w: Vec3[]; b: Vec3[] } = {
+  w: Array.from({ length: 16 }, (_, i) => getBenchSlot("w", i)),
+  b: Array.from({ length: 16 }, (_, i) => getBenchSlot("b", i)),
+};
 
 export function PieceManager({ boardState, lastMove, currentStep, history, onAnimatingChange }: PieceManagerProps) {
   const boardPieces = useMemo(() => boardToVisualPieces(boardState), [boardState]);
@@ -411,6 +418,8 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
           }}
         />
       ))}
+      {ALL_BENCH_POSITIONS.w.map((pos, i) => <DormantCircle key={`dc-w-${i}`} position={pos} side="w" />)}
+      {ALL_BENCH_POSITIONS.b.map((pos, i) => <DormantCircle key={`dc-b-${i}`} position={pos} side="b" />)}
       {benchedPieces.map(bp => (
         <BenchedPieceWrapper key={bp.id} piece={bp} />
       ))}
@@ -509,7 +518,7 @@ function PieceWrapper({
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
   const rigRef = useRef<PieceRig | null>(null);
-  const [dissolve, setDissolve] = useState(0);
+  const dissolveRef = useRef(0);
   const [locomotionActive, setLocomotionActive] = useState(false);
   const commandRef = useRef(command);
   const pieceRef = useRef(piece);
@@ -533,7 +542,7 @@ function PieceWrapper({
       model.position.set(0, 0, 0);
       model.rotation.set(0, 0, 0);
       model.scale.set(1, 1, 1);
-      setDissolve(0);
+      dissolveRef.current = 0;
       setLocomotionActive(false);
       return;
     }
@@ -542,7 +551,7 @@ function PieceWrapper({
     model.position.set(0, 0, 0);
     model.rotation.set(0, 0, 0);
     model.scale.set(1, 1, 1);
-    setDissolve(0);
+    dissolveRef.current = 0;
 
     if (activeCommand.kind === "walk") {
       group.position.set(...activePiece.position);
@@ -606,9 +615,8 @@ function PieceWrapper({
         activePiece.position,
         activeCommand.hitFrom,
         model,
-        setDissolve,
+        (val: number) => { dissolveRef.current = val; },
         callbacksRef.current.onDeathComplete,
-        true,
       );
       setLocomotionActive(false);
     }
@@ -621,7 +629,7 @@ function PieceWrapper({
           ref={rigRef}
           type={piece.type}
           color={piece.color}
-          dissolve={dissolve}
+          dissolveRef={dissolveRef}
           locomotion={{
             active: locomotionActive,
             intensity: piece.type === "k" ? 0.72 : piece.type === "q" ? 0.82 : 1,
@@ -633,75 +641,52 @@ function PieceWrapper({
   );
 }
 
-// Half-width of the 9.8-unit stone pedestal — pieces jump off here
-const PEDESTAL_EDGE_X = 4.85;
-// Matches WorldStage WORLD_GROUND_Y
-const BENCH_GROUND_Y = -0.7;
-// Bench walk is 4× slower than board moves so the animation reads clearly
-const BENCH_SPEED = 4.0;
-
 function BenchedPieceWrapper({ piece }: { piece: BenchedPiece }) {
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
-  const [locomotionActive, setLocomotionActive] = useState(false);
+  const dissolveRef = useRef(1.0);
+  const [circlePhase, setCirclePhase] = useState<"active" | "dimming">("active");
 
   useEffect(() => {
     const group = groupRef.current;
     const model = modelRef.current;
-    if (!group || !model || !piece.isSettling) return;
-
-    group.position.set(...piece.fromPosition);
-
-    playGetUpAnimation(piece.type, model, () => {
-      // Stage 1: walk to pedestal edge (still on platform at y=0)
-      const edgeX = piece.color === "w" ? PEDESTAL_EDGE_X : -PEDESTAL_EDGE_X;
-      const edgeWaypoint: Vec3 = [edgeX, 0, piece.benchPosition[2]];
-
-      setLocomotionActive(true);
-      playTravelAnimation(piece.type, group, model, edgeWaypoint, () => {
-        setLocomotionActive(false);
-
-        // Stage 2: jump off the platform edge
-        const hopDir = piece.color === "w" ? 1 : -1;
-        gsap.timeline({
-          onComplete: () => {
-            // Stage 3: walk to final bench slot at ground level
-            setLocomotionActive(true);
-            playTravelAnimation(piece.type, group, model, piece.benchPosition, () => {
-              setLocomotionActive(false);
-            }, false, BENCH_SPEED);
-          },
-        })
-          .to(group.position, {
-            y: 0.3,
-            x: edgeX + hopDir * 0.35,
-            duration: 0.25,
-            ease: "power2.out",
-          }, 0)
-          .to(group.position, {
-            y: BENCH_GROUND_Y,
-            x: edgeX + hopDir * 0.8,
-            duration: 0.45,
-            ease: "power3.in",
-          }, 0.25);
-      }, false, BENCH_SPEED);
-    });
-  // piece.id is stable for the lifetime of this component instance
+    if (!group || !model) return;
+    group.rotation.y = piece.color === "w" ? -Math.PI / 2 : Math.PI / 2;
+    model.position.set(0, -0.5, 0);
+    model.rotation.set(0, 0, 0);
+    model.scale.set(1, 1, 1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piece.id]);
 
+  const handleCircleReady = () => {
+    const model = modelRef.current;
+    if (!model) return;
+    const proxy = { val: 1 };
+    gsap.to(proxy, {
+      val: 0,
+      duration: 1.8,
+      delay: 0.1,
+      ease: "power2.inOut",
+      onUpdate: () => { dissolveRef.current = proxy.val; },
+      onComplete: () => setCirclePhase("dimming"),
+    });
+    gsap.to(model.position, { y: 0, duration: 2.2, delay: 0.1, ease: "power2.out" });
+  };
+
   return (
     <group ref={groupRef} position={piece.benchPosition}>
+      <MagicCircle
+        position={[0, 0, 0]}
+        side={piece.color}
+        onReady={handleCircleReady}
+        dimming={circlePhase === "dimming"}
+      />
       <group ref={modelRef}>
         <HumanoidPieceModel
           type={piece.type}
           color={piece.color}
-          dissolve={0}
-          locomotion={{
-            active: locomotionActive,
-            intensity: piece.type === "k" ? 0.72 : piece.type === "q" ? 0.82 : 1,
-            speed: piece.type === "k" ? 8.5 : piece.type === "q" ? 9.5 : 12,
-          }}
+          dissolveRef={dissolveRef}
+          locomotion={{ active: false, intensity: 1, speed: 12 }}
         />
       </group>
     </group>
