@@ -111,7 +111,7 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
   const mats = useMemo(() => {
     const de = new THREE.Color(palette.dormantEmissive);
     const ringMat = (opacity: number) =>
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshLambertMaterial({
         color: "#080808",
         emissive: de.clone(),
         emissiveIntensity: 0.5,
@@ -124,7 +124,7 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
       outer: ringMat(0.75),
       mid:   ringMat(0.65),
       inner: ringMat(0.55),
-      core:  new THREE.MeshStandardMaterial({
+      core:  new THREE.MeshLambertMaterial({
         color: "#080808",
         emissive: de.clone(),
         emissiveIntensity: 0.7,

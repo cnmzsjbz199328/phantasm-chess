@@ -31,6 +31,7 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
   const weaponRef = useRef<THREE.Group>(null);
   const walkPhaseRef = useRef(0);
   const wasDissolving = useRef(false);
+  const wasWalking    = useRef(false);
   const dissolveTargets = useRef<THREE.ShaderMaterial[]>([]);
 
   useEffect(() => {
@@ -76,9 +77,15 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
     const pieceType = type.toLowerCase();
     const canWalk = pieceType === "p" || pieceType === "k" || pieceType === "q" || pieceType === "b";
     const walkActive = Boolean(locomotion?.active && canWalk);
+    const d = dissolveRef?.current ?? 0;
+    const isDissolving = d > 0.001;
+
+    if (!walkActive && !wasWalking.current && !isDissolving && !wasDissolving.current) return;
+
     const walkIntensity = locomotion?.intensity ?? 1;
 
     if (walkActive) {
+      wasWalking.current = true;
       walkPhaseRef.current += dt * (locomotion?.speed ?? 12);
       const phase = walkPhaseRef.current;
       const swing = Math.sin(phase) * 0.34 * walkIntensity;
@@ -104,7 +111,7 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
         bodyRef.current.position.y = Math.abs(Math.sin(phase)) * 0.035 * walkIntensity;
         bodyRef.current.rotation.z = Math.sin(phase) * 0.025 * regalScale * walkIntensity;
       }
-    } else {
+    } else if (wasWalking.current) {
       resetLimb(leftLegRef);
       resetLimb(rightLegRef);
       resetLimb(leftFootRef);
@@ -115,10 +122,14 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
         bodyRef.current.position.y = THREE.MathUtils.lerp(bodyRef.current.position.y, 0, 0.18);
         bodyRef.current.rotation.z = THREE.MathUtils.lerp(bodyRef.current.rotation.z, 0, 0.18);
       }
+      if (
+        Math.abs(leftLegRef.current?.rotation.x ?? 0) < 0.002 &&
+        Math.abs(rightLegRef.current?.rotation.x ?? 0) < 0.002 &&
+        Math.abs(leftArmRef.current?.rotation.x ?? 0) < 0.002 &&
+        Math.abs(bodyRef.current?.rotation.z ?? 0) < 0.001
+      ) wasWalking.current = false;
     }
 
-    const d = dissolveRef?.current ?? 0;
-    const isDissolving = d > 0.001;
     if (!isDissolving && !wasDissolving.current) return;
     wasDissolving.current = isDissolving;
     const t = isDissolving ? state.clock.getElapsedTime() : 0;
