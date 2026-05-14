@@ -210,6 +210,7 @@ export function playDeathAnimation(
   model: THREE.Group,
   setDissolve: (value: number) => void,
   onComplete: () => void,
+  skipDissolve = false,
 ) {
   const t = pieceType.toLowerCase();
   const hit = getHitVector(piecePosition, hitFrom);
@@ -286,10 +287,12 @@ export function playDeathAnimation(
       .to(model.scale, { x: 0.58, y: 0.54, z: 0.58, duration: 0.3, ease: "power2.in" }, 0.16);
   }
 
-  tl.to(proxy, {
-    val: 1,
-    duration: t === "k" ? 0.62 : 0.44,
-    ease: "power2.in",
-    onUpdate: () => setDissolve(proxy.val),
-  }, t === "k" ? 0.16 : 0.08);
+  if (!skipDissolve) {
+    tl.to(proxy, {
+      val: 1,
+      duration: t === "k" ? 0.62 : 0.44,
+      ease: "power2.in",
+      onUpdate: () => setDissolve(proxy.val),
+    }, t === "k" ? 0.16 : 0.08);
+  }
 }

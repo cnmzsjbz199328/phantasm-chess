@@ -582,6 +582,7 @@ function PieceWrapper({
         model,
         setDissolve,
         callbacksRef.current.onDeathComplete,
+        true,
       );
       setLocomotionActive(false);
     }
