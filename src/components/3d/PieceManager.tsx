@@ -18,10 +18,9 @@ interface EffectInstance extends Omit<AttackEffectProps, "onComplete"> {
   id: string;
 }
 
-interface LandingEffectInstance {
+interface SquareFlashInstance {
   id: string;
   position: Vec3;
-  pieceType: string;
   pieceColor: Side;
 }
 
@@ -154,7 +153,7 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
   const [visualPieces, setVisualPieces] = useState<VisualPiece[]>(boardPieces);
   const [commands, setCommands] = useState<Record<string, PieceCommand>>({});
   const [effects, setEffects] = useState<EffectInstance[]>([]);
-  const [landingEffects, setLandingEffects] = useState<LandingEffectInstance[]>([]);
+  const [squareFlashes, setSquareFlashes] = useState<SquareFlashInstance[]>([]);
   const [projectiles, setProjectiles] = useState<ProjectileInstance[]>([]);
   const [benchedPieces, setBenchedPieces] = useState<BenchedPiece[]>([]);
   const benchCountsRef = useRef<{ w: number; b: number }>({ w: 0, b: 0 });
@@ -185,13 +184,13 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
     setEffects(prev => prev.filter(e => e.id !== id));
   }, []);
 
-  const addLandingEffect = useCallback((pos: Vec3, pieceType: string, pieceColor: Side) => {
+  const addSquareFlash = useCallback((pos: Vec3, pieceColor: Side) => {
     const id = crypto.randomUUID();
-    setLandingEffects(prev => [...prev, { id, position: pos, pieceType, pieceColor }]);
+    setSquareFlashes(prev => [...prev, { id, position: pos, pieceColor }]);
   }, []);
 
-  const removeLandingEffect = useCallback((id: string) => {
-    setLandingEffects(prev => prev.filter(e => e.id !== id));
+  const removeSquareFlash = useCallback((id: string) => {
+    setSquareFlashes(prev => prev.filter(e => e.id !== id));
   }, []);
 
   const addProjectile = useCallback((
@@ -268,7 +267,7 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
       rangedMoveRef.current = null;
       setCommands({});
       setEffects([]);
-      setLandingEffects([]);
+      setSquareFlashes([]);
       setProjectiles([]);
       setVisualPieces(boardPieces);
       const rebuilt = rebuildBenchFromHistory(history, currentStep);
@@ -360,7 +359,7 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
             addToBench(piece);
             markComplete(`death:${piece.id}`);
           }}
-          onLand={(position) => addLandingEffect(position, piece.type, piece.color)}
+          onLand={(position) => addSquareFlash(position, piece.color)}
           onPromote={(position, promoteTo) => addEffect(position, promoteTo, piece.color)}
           onImpact={() => {
             if (isRangedPiece(piece.type) && lastMove?.captured) {
@@ -395,13 +394,12 @@ export function PieceManager({ boardState, lastMove, currentStep, history, onAni
           onComplete={() => removeEffect(eff.id)}
         />
       ))}
-      {landingEffects.map(eff => (
-        <LandingEffect
+      {squareFlashes.map(eff => (
+        <SquareFlashEffect
           key={eff.id}
           position={eff.position}
-          pieceType={eff.pieceType}
           pieceColor={eff.pieceColor}
-          onComplete={() => removeLandingEffect(eff.id)}
+          onComplete={() => removeSquareFlash(eff.id)}
         />
       ))}
       {projectiles.map(proj => (
@@ -439,67 +437,56 @@ interface PieceWrapperProps {
 }
 
 
-function getLandingProfile(pieceType: string) {
-  const t = pieceType.toLowerCase();
-  if (t === "n") return { duration: 0.62, ringSpeed: 4.2, maxRadius: 1.25, height: 0.08, pulse: 0.95 };
-  if (t === "r") return { duration: 0.68, ringSpeed: 3.6, maxRadius: 1.45, height: 0.025, pulse: 1.0 };
-  if (t === "b") return { duration: 0.58, ringSpeed: 3.0, maxRadius: 1.0, height: 0.12, pulse: 0.55 };
-  if (t === "q") return { duration: 0.68, ringSpeed: 3.2, maxRadius: 1.25, height: 0.16, pulse: 0.7 };
-  if (t === "k") return { duration: 0.72, ringSpeed: 2.8, maxRadius: 1.18, height: 0.08, pulse: 0.65 };
-  return { duration: 0.44, ringSpeed: 3.5, maxRadius: 0.72, height: 0.04, pulse: 0.55 };
-}
+// Module-level geometry singletons for SquareFlashEffect (never disposed)
+const FLASH_T = 0.07; // border strip thickness in world units
+const FLASH_GEO_H = new THREE.PlaneGeometry(1, FLASH_T); // horizontal strip (N/S edges)
+const FLASH_GEO_V = new THREE.PlaneGeometry(FLASH_T, 1); // vertical strip (W/E edges)
+const FLASH_ROT: [number, number, number] = [-Math.PI / 2, 0, 0];
+const FLASH_INSET = 0.5 - FLASH_T / 2; // center of strip, measured from square center
 
-function LandingEffect({
+function SquareFlashEffect({
   position,
-  pieceType,
   pieceColor,
   onComplete,
 }: {
   position: Vec3;
-  pieceType: string;
   pieceColor: Side;
   onComplete: () => void;
 }) {
-  const ringRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
   const elapsed = useRef(0);
   const done = useRef(false);
-  const profile = useMemo(() => getLandingProfile(pieceType), [pieceType]);
   const colors = SIDE_COLORS[pieceColor];
+  const DURATION = 0.55;
+
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({
+      color: colors.glow,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+    [colors.glow]
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
 
   useFrame((_, dt) => {
     elapsed.current += dt;
-    const p = Math.min(elapsed.current / profile.duration, 1);
-
-    if (ringRef.current) {
-      const radius = Math.min(elapsed.current * profile.ringSpeed, profile.maxRadius);
-      ringRef.current.scale.setScalar(Math.max(radius, 0.001));
-      (ringRef.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (1 - p) * profile.pulse);
-    }
-
-    if (glowRef.current) {
-      const pulse = Math.sin(p * Math.PI);
-      glowRef.current.scale.setScalar(0.32 + pulse * 0.38);
-      glowRef.current.position.y = profile.height + pulse * profile.height;
-      (glowRef.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, pulse * 0.38);
-    }
-
+    const p = Math.min(elapsed.current / DURATION, 1);
+    mat.opacity = Math.pow(1 - p, 1.5) * 0.95;
     if (!done.current && p >= 1) {
       done.current = true;
       onComplete();
     }
   });
 
+  const [x, , z] = position;
   return (
-    <group position={position}>
-      <mesh ref={ringRef} position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.001}>
-        <ringGeometry args={[0.75, 0.82, 48]} />
-        <meshBasicMaterial color={colors.glow} transparent opacity={0.6} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
-      <mesh ref={glowRef} position={[0, profile.height, 0]}>
-        <sphereGeometry args={[0.18, 12, 12]} />
-        <meshBasicMaterial color={colors.accent} transparent opacity={0} depthWrite={false} />
-      </mesh>
+    <group position={[x, -0.049, z]}>
+      <mesh geometry={FLASH_GEO_H} material={mat} rotation={FLASH_ROT} position={[0, 0, -FLASH_INSET]} />
+      <mesh geometry={FLASH_GEO_H} material={mat} rotation={FLASH_ROT} position={[0, 0,  FLASH_INSET]} />
+      <mesh geometry={FLASH_GEO_V} material={mat} rotation={FLASH_ROT} position={[-FLASH_INSET, 0, 0]} />
+      <mesh geometry={FLASH_GEO_V} material={mat} rotation={FLASH_ROT} position={[ FLASH_INSET, 0, 0]} />
     </group>
   );
 }
