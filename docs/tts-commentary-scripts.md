@@ -5,133 +5,276 @@
 ---
 
 ## Match 1 — Kasparov's Immortal · 1999 · Wijk aan Zee
+**Theme:** `abyss` · White: Garry Kasparov · Black: Veselin Topalov
 
 ### Scene
-A tense, high-stakes chess tournament in Wijk aan Zee, 1999. The atmosphere is quiet but charged with electric anticipation, matching the 'abyss' theme of deep calculation.
+A tense, high-stakes chess tournament in Wijk aan Zee, 1999. The atmosphere is electric, heavy, and intense—matching the 'abyss' theme of impossibly deep calculation.
 
 ### Sample Context
-Sports commentary style. Pacing starts measured and analytical, gradually building into a crescendo of disbelief and excitement. Tone is professional, dramatic, and awe-struck.
+Esports / Modern sports commentary style. Extremely energetic, high pacing, hype-driven, and very active. Tone is hyped, astonished, and intensely engaging.
 
 ### Text
-Host: [professional] Welcome back to Phantasm Chess. Tonight — Wijk aan Zee, January 1999. Garry Kasparov, the reigning world champion, sits across from Veselin Topalov, a dangerous young challenger. [anticipation] What unfolds over the next thirty-four moves will become, in the eyes of many, the greatest game of chess ever played.
-Guest: [analytical] Kasparov at this point is rated 2812 — the highest in history. Topalov is no pushover; he'll go on to become world champion himself. [ominous] But tonight, he's walking into something that defies human calculation.
-Host: [assertive] Bh6. Kasparov sends his bishop to h6, forcing the exchange of Topalov's dark-squared bishop.
-Guest: [insightful] This is a subtle, long-range plan. By eliminating Black's dark-squared bishop, Kasparov removes the guardian of the entire kingside. Topalov's castle will have no dark-square defense. [hushed] The storm is being built from the foundations — quietly, deliberately.
-Host: [alert] Nd5. The knight drops into the very center of the board. The position shifts.
-Guest: [amazed] That knight touches four critical squares simultaneously. Kasparov is not playing moves anymore — he's constructing a machine. Every piece is being positioned for what comes next. [dramatic] And what comes next is unlike anything the chess world has seen.
-Host: [shocked] Rxd4. Kasparov slides the rook forward... and sacrifices it. For a single pawn.
-Guest: [intense] This is the moment. A full rook — five points — traded for one pawn. The calculation behind this move extends more than twenty moves into the future. No computer in 1999 could have verified it in the time Kasparov had at the board. [reverent] He saw it with his mind alone.
-Host: [urgency] Re7 check. The second rook walks straight into danger.
-Guest: [excited] Two rook sacrifices. Total material deficit: ten points. Kasparov is down two rooks for a pawn — and he's smiling. Because he has already seen the end of this game, and Topalov has not.
-Host: [shouting] Qxd4 check. The queen enters the chase. Topalov's king is dragged out into the open.
-Guest: [rapid] From here, Kasparov's queen hunts that king across the entire board — from b8 all the way to c3. Seven consecutive forcing moves. The king cannot find shelter. It has nowhere to go. [awe] This is not calculation — this is vision.
-Host: [solemn] Ra7. Topalov stares at the position... and extends his hand. The game is over.
-Guest: [reflective] There is nothing left. The king has been driven across the width of the board, from one side to the other, with no escape. Kasparov calculated all of this — every variation, every king move — from move twenty-four. The chess world sat in silence. [triumphant] And then erupted.
+
+#### `seg_0` — Opening
+Speaker 1: [energetic] What is up, everyone, and welcome back to Phantasm Chess! We are taking you back to Wijk aan Zee, 1999! Garry Kasparov, the absolute boss of the chess world, is throwing down against the young phenom, Veselin Topalov! [hype] Buckle up, because the next thirty-four moves are about to completely melt your mind!
+Speaker 2: [excited] Oh, Kasparov is sitting at a record-shattering 2812 rating here! Topalov is no joke, he's a future champ himself! [ominous] But tonight? He's walking straight into the meat grinder. What we're about to see is way beyond human calculation!
+
+---
+
+#### `seg_15` — Bh6: The Bishop Drives Forward
+Speaker 1: [assertive] Boom! Bishop to h6! Kasparov is not messing around—he’s forcing Topalov to trade off his dark-squared bishop!
+Speaker 2: [insightful] This is such a sneaky, long-term play! By sniping that dark-squared bishop, Kasparov is basically stripping all the armor off Topalov's kingside. [hushed] He's quietly brewing up a massive storm right under Topalov's nose!
+
+---
+
+#### `seg_43` — Nd5: The Engine Engages
+Speaker 1: [alert] Knight to d5! Kasparov drops the knight right into the dead center of the board, and the whole vibe just changed!
+Speaker 2: [amazed] Look at that monster knight! It’s hitting four critical squares at once. Kasparov isn't just making moves anymore, he's building a terminator! [hype] The pieces are locking into place for something completely unheard of!
+
+---
+
+#### `seg_47` — Rxd4!!: The First Rook Sacrifice
+Speaker 1: [shocked] Wait, Rook takes d4?! He just slides the rook in and completely sacs it! For a single pawn?! Are you kidding me?!
+Speaker 2: [intense] This is it! A full five-point rook, gone! The math behind this move is like twenty moves deep! You couldn't even run this on a supercomputer back in '99 in real time! [reverent] Kasparov just calculated the entire universe in his head!
+
+---
+
+#### `seg_49` — Re7+!: The Second Rook into the Fire
+Speaker 1: [urgency] Rook to e7, check! Oh my god, he's throwing his *second* rook straight into the fire!
+Speaker 2: [excited] Two rooks sacrificed! He's down a whopping ten points in material—two full rooks for a single pawn! And look at him, he's literally smiling! Because he already sees the checkmate, and Topalov has no idea!
+
+---
+
+#### `seg_51` — Qxd4+: The King Hunt Begins
+Speaker 1: [shouting] Queen takes d4, check! The Queen is joining the hunt! Topalov's king is being dragged out into the open street!
+Speaker 2: [rapid] It's open season! Kasparov's Queen is chasing that king from b8 all the way to c3! Seven forcing moves in a row! There is nowhere to hide! [awe] This isn't just calculating, this is absolute matrix-level vision!
+
+---
+
+#### `seg_67` — Resignation
+Speaker 1: [solemn] Rook to a7... Topalov is just staring at the board. And there's the handshake! It is all over!
+Speaker 2: [reflective] There’s absolutely nothing left to do. That king just got marched across the entire board with zero chance of escape. Kasparov saw this exact position from move twenty-four! The whole room is dead silent! [triumphant] And now the crowd is going absolutely wild!
 
 ---
 
 ## Match 2 — The Immortal Game · 1851 · London
+**Theme:** `arena` · White: Adolf Anderssen · Black: Lionel Kieseritzky
 
 ### Scene
-An informal but highly competitive game in London, 1851, echoing a gladiatorial 'arena'. The air is thick with the scent of cigar smoke and the clinking of glasses.
+An informal but highly competitive game in London, 1851. The vibe is a loud, gladiatorial 'arena' pub match. The air is thick with cigar smoke and hyped spectators.
 
 ### Sample Context
-Historical chess commentary. Pacing is brisk and aggressive, mirroring the reckless style of the Romantic era. Tone is theatrical, bold, and escalating in tension.
+Esports / Modern sports commentary style. Extremely aggressive and fast-paced. Tone is theatrical, bold, loud, and constantly escalating.
 
 ### Text
-Host: [theatrical] London, 1851. The first international chess tournament has just concluded. In its aftermath, two masters settle at the board for an informal game. Adolf Anderssen — the German schoolmaster turned chess genius — versus Lionel Kieseritzky. [grand] What follows will be called the most famous game in chess history.
-Guest: [knowledgeable] Informal — and yet it's reproduced in every chess anthology ever printed. Anderssen is about to demonstrate something the world had never seen: a game won with almost no material, on pure sacrifice and pure attack.
-Host: [assertive] f4. Anderssen offers the King's Gambit — a pawn thrown onto the fire in exchange for a blazing assault.
-Guest: [intense] The King's Gambit is an invitation to war. White sacrifices a center pawn to open the f-file and launch everything at the enemy king. Kieseritzky accepts. He wants the material. [ominous] That will be his undoing.
-Host: [surprised] Kf1. The king steps out from behind the pawns — surrendering his right to castle. Voluntarily.
-Guest: [analytical] This is deliberate. Anderssen doesn't want safety — he wants the rook on g1 for the attack. He has traded away his own king's shelter to fuel the assault. [bold] It's a wager: Anderssen bets his king to take Kieseritzky's.
-Host: [urgency] Rg1. The rook joins the front line.
-Guest: [amazed] Count the sacrifices so far: a bishop, a pawn. Kieseritzky leads in material. And yet — look at Anderssen's position. Every piece faces the enemy king. [intense] The rook on g1 is a loaded cannon, pointed at a wall with a crack in it.
-Host: [alert] Nd5. The knight leaps to dominate the center. Kieseritzky's queen begins to plunder the queenside — taking a rook on a1.
-Guest: [caution] Kieseritzky has now won a queen and a rook in material. He's up enormously. But his king stands completely exposed, and his pieces are scattered on the wrong side of the board. Anderssen was counting on exactly this.
-Host: [dramatic] Bd6. The bishop slides into position — cutting off the queen's retreat.
-Guest: [hushed] The trap is sprung. Kieseritzky's queen is severed from the defense. Bd6 is not an attack in itself — it is a door being closed. There is no going back now.
-Host: [shocked] e5. The second rook is placed where it can be captured. Anderssen offers it to the flames.
-Guest: [awe] He now sacrifices his last rook. What remains: a king, two bishops, and the most precise combination in the history of chess. Against a full army. [triumphant] And he is about to win — by force.
-Host: [shouting] Qf6 check. The queen — Anderssen's queen — is placed where it must be taken.
-Guest: [reverent] A queen sacrifice. The room would have fallen silent. Kieseritzky is forced to capture. And when he does — only the two bishops remain. And the bishop is enough.
-Host: [solemn] Be7. Checkmate. With a single bishop.
-Guest: [grand] Checkmate. With two bishops and a king, Anderssen has mated a player holding two rooks, a queen, a bishop, and a knight. The chess world named it The Immortal Game. That name has never been challenged — and never will be.
+
+#### `seg_0` — Opening
+Speaker 1: [hype] We're traveling back to London, 1851! The very first international chess tournament just wrapped up, and these two legends, Adolf Anderssen and Lionel Kieseritzky, are just playing a casual game at the pub! [dramatic] But what happens next is literally going down in history as The Immortal Game!
+Speaker 2: [knowledgeable] It's crazy that this was just a casual match, because it's still studied today! Anderssen is about to show the world something insane—winning a game with basically zero material left on the board! It's pure, unfiltered aggression!
+
+---
+
+#### `seg_3` — King's Gambit Accepted
+Speaker 1: [assertive] And there's f4! Anderssen goes right for the King's Gambit! He’s throwing a pawn to the wolves just to start a brawl!
+Speaker 2: [intense] The King's Gambit is pure disrespect! He’s sacrificing the center to crack open the f-file and go straight for the throat! Kieseritzky takes the bait. He wants that free pawn, [ominous] but he has no idea what he just unleashed!
+
+---
+
+#### `seg_7` — Kf1: The King Steps Out
+Speaker 1: [surprised] Wait, King to f1?! He steps the king out and gives up his castling rights?! On purpose?!
+Speaker 2: [analytical] Oh, it's totally on purpose! Anderssen doesn't care about safety right now—he wants his rook on g1 to join the attack! He’s literally putting his own king on the line just to get better angles! [bold] He's going all in!
+
+---
+
+#### `seg_21` — Rg1: The Rook Joins the Charge
+Speaker 1: [urgency] Rook to g1! The rook is marching straight to the front lines!
+Speaker 2: [amazed] Just count the sacrifices so far: a bishop and a pawn! Kieseritzky is up a ton of material! But look at Anderssen's setup—every single piece is staring down the enemy king. [intense] That rook on g1 is basically a loaded shotgun!
+
+---
+
+#### `seg_33` — Nd5: The Trap Tightens
+Speaker 1: [alert] Knight to d5! He plants that knight right in the center! Meanwhile, Kieseritzky's Queen is just gobbling up pieces on the queenside, taking the rook on a1!
+Speaker 2: [caution] Kieseritzky is now up a queen and a rook! The material gap is huge! But his king is stranded in the open, and his pieces are on the wrong side of the planet! This is exactly where Anderssen wanted him!
+
+---
+
+#### `seg_35` — Bd6: The Door Shuts
+Speaker 1: [dramatic] Bishop to d6! He drops the bishop and slams the door shut on the queen's retreat!
+Speaker 2: [hushed] Boom! Trap activated! Kieseritzky's queen is completely cut off from the defense. That bishop move wasn't even an attack—it was locking the exits! There is absolutely no escape now!
+
+---
+
+#### `seg_37` — e5: The Last Rook Offered
+Speaker 1: [shocked] Pawn to e5! Wait, he's offering up his *second* rook?! He’s just letting it get taken!
+Speaker 2: [awe] He is sacrificing his last rook! Think about this: he has a king, two bishops, and he's facing a full army! And he is still going to force a win! [triumphant] This is pure calculation!
+
+---
+
+#### `seg_43` — Qf6+!!: The Queen Sacrifice
+Speaker 1: [shouting] Queen to f6, check! He is putting his own Queen right in the line of fire!
+Speaker 2: [reverent] A Queen sacrifice! The ultimate disrespect! Kieseritzky *has* to take it. And once he does, Anderssen is down to just two bishops! But guess what? That's all he needs!
+
+---
+
+#### `seg_45` — Be7#: Checkmate
+Speaker 1: [solemn] Bishop to e7. And that is checkmate! With just a bishop!
+Speaker 2: [grand] Are you kidding me?! Checkmate! With just two bishops and a king, Anderssen just styled on a guy who had two rooks, a queen, a bishop, and a knight! They don't call it The Immortal Game for nothing! This game will live forever!
 
 ---
 
 ## Match 3 — The Game of the Century · 1956 · New York
+**Theme:** `molten` · White: Donald Byrne · Black: Robert James Fischer (age 13)
 
 ### Scene
-A quiet, routine tournament hall in New York, October 1956. A thirteen-year-old boy sits across from a respected master. The 'molten' theme signifies the brewing eruption.
+A quiet tournament hall in New York, October 1956. A thirteen-year-old boy is about to erupt. The 'molten' theme signifies the brewing, unstoppable explosion.
 
 ### Sample Context
-Sports commentary style. Pacing starts calm and unassuming, then rapidly accelerates as the combination unfolds. Tone is a mix of disbelief, admiration, and explosive energy.
+Esports / Modern sports commentary style. Starts casual, then rapidly accelerates into explosive energy and disbelief. Tone is hyped, mind-blown, and adrenaline-fueled.
 
 ### Text
-Host: [calm] New York, October 1956. The Rosenwald Memorial Tournament. Donald Byrne — a respected master and chess teacher — sits across from a thirteen-year-old boy named Robert James Fischer. The audience pays very little attention.
-Guest: [knowledgeable] Fischer had already shown promise. But no one in that room could have predicted what was about to happen. He is thirteen years old. Byrne is a titled master. [casual] This is supposed to be a routine tournament game.
-Host: [alert] Nxe4. Fischer sacrifices his knight. The board begins to shift.
-Guest: [insightful] He's not simply giving up a knight — he's starting a combination. Fischer has seen ten, fifteen moves ahead. This is not recklessness. This is precision. [hushed] And it begins quietly, with a knight.
-Host: [curious] Be6. Fischer repositions his bishop. His queen stands exposed — almost... offered.
-Guest: [analytical] He's constructing a trap around Byrne's pieces. The queen is being lured into a position from which there is no safe return. Fischer's expression shows nothing. [ominous] He already knows what Byrne is about to do.
-Host: [surprised] Bxb6. Byrne captures the queen. He has taken the bait.
-Guest: [dramatic] At this moment, Fischer has given away his queen — the most powerful piece on the board. Every spectator in the room believes Byrne has won the game. [intense] Fischer has something else entirely in mind.
-Host: [shouting] Bxc4 check. And the pieces begin to fall — all in Fischer's favor.
-Guest: [rapid] This is the opening of a twenty-move combination. The material recovers, the advantage compounds, and Byrne's position collapses from the inside. He cannot stop any of it. [awe] The thirteen-year-old has already seen the ending.
-Host: [triumphant] Rc2. Checkmate.
-Guest: [reverent] Robert James Fischer — age thirteen — has just played the Game of the Century. The chess annotator Hans Kmoch coined the name that same week. No one has disputed it in seventy years. No one ever will.
+
+#### `seg_0` — Opening
+Speaker 1: [calm] New York, October 1956. The Rosenwald Memorial Tournament. We’ve got Donald Byrne, an absolute veteran and chess master, sitting across from... a thirteen-year-old kid named Bobby Fischer. The crowd is basically ignoring this game.
+Speaker 2: [knowledgeable] I mean, Fischer was a known prodigy, sure. But nobody in that room was ready for what was about to happen. He’s thirteen! Byrne is a titled master! [casual] This was supposed to be a total blowout for the veteran!
+
+---
+
+#### `seg_26` — Nxe4: The Spark
+Speaker 1: [alert] Knight takes e4! Fischer just sacrifices his knight! The whole board state just flipped!
+Speaker 2: [insightful] Oh, he's not just giving away a piece—he's launching a master plan! Fischer is seeing like fifteen moves deep right now. This is a surgical strike! [hushed] And it all starts with this one quiet knight sacrifice!
+
+---
+
+#### `seg_34` — Be6: The Bait Is Set
+Speaker 1: [curious] Bishop to e6! Fischer shifts his bishop... but wait, he's leaving his Queen totally hanging! Is he baiting him?
+Speaker 2: [analytical] He is building a straight-up cage around Byrne's pieces! That Queen is bait, plain and simple. And Fischer has a poker face on! [ominous] He knows exactly what Byrne is going to do!
+
+---
+
+#### `seg_35` — Bxb6: Byrne Takes the Queen
+Speaker 1: [surprised] Bishop takes b6! Byrne grabs the Queen! He took the bait hook, line, and sinker!
+Speaker 2: [dramatic] Fischer just gave up his Queen! The most powerful piece on the board is gone! Everyone in the room thinks the kid just blundered the game away! [intense] But Fischer is playing 4D chess right now!
+
+---
+
+#### `seg_36` — Bxc4+: The Pieces Rain Down
+Speaker 1: [shouting] Bishop takes c4, check! And the avalanche begins! Byrne’s pieces are dropping like flies!
+Speaker 2: [rapid] This is the start of an insane twenty-move combo! Fischer is getting all his material back, compounding his advantage, and Byrne’s defense is completely imploding! [awe] This thirteen-year-old kid saw the finish line twenty moves ago!
+
+---
+
+#### `seg_82` — Rc2#: Checkmate
+Speaker 1: [triumphant] Rook to c2! And that is checkmate! Unbelievable!
+Speaker 2: [reverent] Bobby Fischer, at just thirteen years old, has just played the Game of the Century! Hans Kmoch called it right then and there, and seventy years later, nobody is arguing! Absolute perfection!
 
 ---
 
 ## Match 4 — The Evergreen Game · 1852 · Berlin
+**Theme:** `frost` · White: Adolf Anderssen · Black: Jean Dufresne
 
 ### Scene
-A private, frost-bitten parlor in Berlin, 1852. Two chess masters face each other across the board in dead silence, with no audience. The 'frost' theme highlights the frozen beauty of the combination.
+A private parlor in Berlin, 1852. Dead silence. Two absolute legends going head-to-head. The 'frost' theme highlights the chilling, cold-blooded precision.
 
 ### Sample Context
-Historical chess commentary. Pacing is sharp and precise, reflecting the cutting nature of the sacrifices. Tone is elegant, analytical, and marveling.
+Esports / Modern sports commentary style. Sharp, biting, and fast-paced. Tone is hype, slick, and marveling at the sheer disrespect.
 
 ### Text
-Host: [elegant] Berlin, 1852. In a private parlor, two chess masters face each other across the board. Adolf Anderssen — master of the Romantic era — and Jean Dufresne, a capable and dangerous opponent. No audience. No prize. Only the game.
-Guest: [reflective] Anderssen had already played The Immortal Game the year before. Now, in this quiet Berlin parlor, he's about to create something equally beautiful — a game that will be called The Evergreen, [reverent] because its brilliance never fades.
-Host: [assertive] b4. The Evans Gambit. Anderssen hurls a pawn toward the center.
-Guest: [knowledgeable] The Evans Gambit was the weapon of the Romantic era — a pawn sacrificed for explosive development and rapid activation. Dufresne accepts. He's confident in the extra material. [ominous] Anderssen is confident in something else entirely.
-Host: [urgency] Ne4. The knight springs to the center. Anderssen's pieces are converging on the enemy king.
-Guest: [tense] The position is razor-sharp. Both kings remain exposed. Anderssen is burning his development advantage like fuel — feeding it directly into a direct assault. The sacrifices are about to begin in earnest.
-Host: [dramatic] Bxd3. White recaptures the pawn — and the position crystallizes.
-Guest: [analytical] Every Anderssen piece now points toward Black's king. The alignment is complete. What follows in the next few moves will be the most celebrated combination of the 1850s.
-Host: [alert] exf6. The pawn claims another piece. Dufresne pushes his rook to g8 — fighting for counterplay.
-Guest: [insightful] Dufresne is not passive — he's threatening mate himself. But Anderssen has a response that collapses every defensive idea simultaneously. [hushed] The combination is already in motion. It cannot be stopped.
-Host: [shocked] Rxe7 check. The rook drives deep into the position. Anderssen sacrifices it.
-Guest: [amazed] Double rook sacrifice. He has now given away a bishop and two rooks — enormous material. What remains will be enough. Because Anderssen has seen what Dufresne cannot. [dramatic] And what Dufresne cannot see is the end.
-Host: [triumphant] Bxe7. Checkmate. The Evergreen Game is complete.
-Guest: [grand] Checkmate with a bishop. A masterpiece of combinational chess. This game was analyzed, reprinted, and marveled at for over a century. It is still taught today. [reverent] The name says it best — The Evergreen does not fade.
+
+#### `seg_0` — Opening
+Speaker 1: [elegant] Berlin, 1852. We’re in a private parlor, dead silence. Two absolute legends, Adolf Anderssen and Jean Dufresne, going head-to-head. No prize money, no crowd. Just pure pride!
+Speaker 2: [reflective] Anderssen just played The Immortal Game a year ago! And now, in this quiet little room, he’s about to drop another masterpiece! They call this one The Evergreen, [reverent] because its brilliance is never going to die!
+
+---
+
+#### `seg_4` — Evans Gambit
+Speaker 1: [assertive] b4! The Evans Gambit! Anderssen is yeeting a pawn into the center right out of the gate!
+Speaker 2: [knowledgeable] That’s the ultimate weapon of the Romantic era! Just sacrifice a pawn to get your pieces moving at lightning speed! Dufresne takes it, thinking he’s up material. [ominous] But Anderssen is cooking up something nasty!
+
+---
+
+#### `seg_15` — The Pieces Converge
+Speaker 1: [urgency] Knight to e4! The knight jumps into the action! Anderssen’s entire army is zooming in on the king!
+Speaker 2: [tense] This position is a ticking time bomb! Both kings are wide open! Anderssen is trading all his development speed for pure attack power! The fireworks are about to start!
+
+---
+
+#### `seg_16` — Bxd3: The Stage Is Set
+Speaker 1: [dramatic] Bishop takes d3! Anderssen wins the pawn back, and look at this setup!
+Speaker 2: [analytical] Every single piece Anderssen has is staring down Dufresne’s king like a laser beam! Everything is aligned! What happens next is going to be the absolute highlight reel of the 1850s!
+
+---
+
+#### `seg_18` — exf6, Rg8: Counterplay Denied
+Speaker 1: [alert] pawn takes f6! He grabs another piece! Dufresne slides his rook to g8, desperately trying to fight back!
+Speaker 2: [insightful] Dufresne is throwing punches too! He’s threatening his own mate! But Anderssen has a counter that just breaks the game engine! [hushed] The combo is locked in. There is no stopping it now!
+
+---
+
+#### `seg_20` — Rxe7+: The Double Rook Sacrifice
+Speaker 1: [shocked] Rook takes e7, check! He drives the rook all the way in and just sacrifices it!
+Speaker 2: [amazed] A double rook sacrifice! He has tossed away a bishop and two rooks! That is a massive material deficit! But it doesn't even matter, because Anderssen sees the matrix! [dramatic] Dufresne is walking completely blind!
+
+---
+
+#### `seg_24` — Bxe7#: The Evergreen Conclusion
+Speaker 1: [triumphant] Bishop takes e7! And that is checkmate! The Evergreen Game is in the books!
+Speaker 2: [grand] Checkmate with just a bishop! An absolute combinational masterpiece! People have been drooling over this game for over a century! [reverent] They call it The Evergreen for a reason—it’s never going out of style!
 
 ---
 
 ## Match 5 — The Opera Game · 1858 · Paris Opera House
+**Theme:** `jade` · White: Paul Morphy · Black: Duke of Brunswick & Count Isouard
 
 ### Scene
-The Paris Opera House glowing with candlelight in 1858. The stage plays Bellini's Norma, while in a private box, chess history is made. The 'jade' theme adds to the opulence.
+A private box at the Paris Opera House in 1858. The orchestra plays Norma below, while a chess massacre happens above. The 'jade' theme adds to the flashy opulence.
 
 ### Sample Context
-Theatrical chess commentary. Pacing is fluid and relentless, like an orchestral performance. Tone is sophisticated, increasingly forceful, and climactic.
+Esports / Modern sports commentary style. Extremely fast, relentless, and hype-driven. Tone is mind-blown, punchy, and climactic.
 
 ### Text
-Host: [sophisticated] Paris, 1858. The opera house glows with candlelight. On stage: Bellini's Norma. In a private box: Paul Morphy — America's greatest chess prodigy, on his European tour — and two aristocrats who insist on a game. [casual] Morphy agrees. He glances at the stage between moves.
-Guest: [knowledgeable] Morphy was, by 1858, arguably the strongest chess player in the world. The Duke and the Count are playing together against him as a team — and it still won't be enough. [analytical] This game lasts seventeen moves and establishes principles that chess teachers still use today.
-Host: [curious] Bg4. The Duke pins Morphy's knight against the queen.
-Guest: [insightful] A passive move. By pinning the knight, Black surrenders the initiative entirely. Morphy can now develop every piece with complete freedom, without opposition. This single move essentially hands Morphy the game plan.
-Host: [assertive] Bxf3. Morphy recaptures with the queen. The position opens.
-Guest: [analytical] Morphy now has two open files and absolute piece harmony. Black has surrendered the bishop pair, but Morphy doesn't care about bishop pairs. He cares about the f-file, the d-file, and the perfect coordination of his army. [bold] It is already complete.
-Host: [urgency] Nxb5. First sacrifice. The knight charges forward.
-Guest: [intense] Morphy gives away a knight — for what? A tempo. An open line. A development lead that translates directly into assault. He cares nothing for material. Only activation. Only the clock of attack.
-Host: [dramatic] Bxb5 check. The bishop follows. Two pieces sacrificed in succession.
-Guest: [rapid] Second sacrifice. Both minor pieces vanish into the position. Each one rips open a file, exposes the king, or drives an enemy piece to a worse square. [assertive] None of this is reckless — every sacrifice is calculated, forced, and final.
-Host: [shouting] Rxd7. The rook drives deep. A third sacrifice.
-Guest: [amazed] Three pieces given away in rapid succession. The files are pried open. Now look — the rook on d1 has sat there since move twelve. Morphy placed it there for this exact moment. That rook has not moved a single time. [triumphant] And it wins the game.
-Host: [shocked] Qb8 check. Morphy places his queen where it must be taken.
-Guest: [reverent] The queen sacrifice. The final act. Black has no choice but to capture. And when the queen disappears — when the last great piece is gone — the rook that waited in silence delivers checkmate.
-Host: [solemn] Rd8. Checkmate. The Opera Game is over.
-Guest: [grand] The rook that never moved — checkmate. The orchestra plays on downstairs. Morphy, they say, barely looked at the board between acts. He was watching Norma. The chess world watched him. [reflective] This game is taught to every student who wants to understand piece development. And it always will be.
+
+#### `seg_0` — Opening
+Speaker 1: [sophisticated] Paris, 1858. We’re in a private box at the Paris Opera House! Down below, an orchestra is playing Norma. Up here? Paul Morphy, the American chess prodigy, is getting challenged by a Duke and a Count! [casual] Morphy agrees, barely even looking away from the opera!
+Speaker 2: [knowledgeable] Morphy is arguably the final boss of chess in 1858! Two aristocrats teaming up against him? Not even close to a fair fight! [analytical] This game only lasts seventeen moves, but it’s literally the blueprint for how to play chess!
+
+---
+
+#### `seg_6` — Bg4: The Pin That Changes Everything
+Speaker 1: [curious] Bishop to g4! The Duke pins Morphy's knight to the Queen!
+Speaker 2: [insightful] Such a passive, scary move! By pinning the knight, Black just gave up the steering wheel! Morphy gets to develop his pieces with zero resistance! This one move basically handed Morphy the win!
+
+---
+
+#### `seg_8` — Bxf3: Open Files, Total Harmony
+Speaker 1: [assertive] Bishop takes f3! Morphy snaps it back with the Queen! The board is opening up!
+Speaker 2: [analytical] Look at Morphy's setup! He’s got two wide-open files and his pieces are flowing like water! He gave up the bishop pair, but he doesn't even care! He just wants open lines and pure coordination! [bold] His army is ready to strike!
+
+---
+
+#### `seg_19` — Nxb5: First Sacrifice
+Speaker 1: [urgency] Knight takes b5! The first sacrifice! The knight charges in!
+Speaker 2: [intense] He gives away a full knight! Why?! For speed! For open lines! He’s turning his development lead into a full-scale invasion! He doesn't care about the pieces, he just wants to crush the clock!
+
+---
+
+#### `seg_21` — Bxb5+: Second Sacrifice
+Speaker 1: [dramatic] Bishop takes b5, check! The bishop follows right behind it! Two sacrifices back-to-back!
+Speaker 2: [rapid] A second minor piece, gone! Every single sacrifice rips open a file or forces the enemy pieces into terrible spots! [assertive] This isn't random aggression! Every move is completely calculated and deadly!
+
+---
+
+#### `seg_25` — Rxd7!!: The Rook Plunges In
+Speaker 1: [shouting] Rook takes d7! The rook crashes the party! A third sacrifice!
+Speaker 2: [amazed] Three pieces thrown into the fire! The defenses are completely shredded! And look at that rook on d1—it hasn't moved since move twelve! Morphy literally parked it there just for this exact combo! [triumphant] And that's what's going to win the game!
+
+---
+
+#### `seg_31` — Qb8+!!: The Queen Sacrifice
+Speaker 1: [shocked] Queen to b8, check! Morphy offers up his Queen! He literally puts it where it HAS to be taken!
+Speaker 2: [reverent] The Queen sacrifice! The absolute mic drop! Black has zero choice but to capture it! And once that Queen is gone... that rook that was just chilling in the back is going to deliver the final blow!
+
+---
+
+#### `seg_33` — Rd8#: Curtain Call
+Speaker 1: [solemn] Rook to d8! Checkmate! The Opera Game is a wrap!
+Speaker 2: [grand] The rook that never moved just delivered checkmate! And Morphy? He's still just watching the opera! The chess world was stunned! [reflective] If you want to learn how to develop your pieces, this is the game you study. Forever!
