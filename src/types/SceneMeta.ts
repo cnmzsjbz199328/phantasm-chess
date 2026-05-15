@@ -12,4 +12,5 @@ export interface SceneMeta {
   writer?: string;
   tools?: string[];
   nextEpisode?: string;
+  commentarySegments?: number;
 }

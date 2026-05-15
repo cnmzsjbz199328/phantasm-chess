@@ -10,6 +10,7 @@ import { UIOverlay } from "./components/UIOverlay";
 import { IntroOverlay } from "./components/IntroOverlay";
 import { OutroOverlay } from "./components/OutroOverlay";
 import { useChessEngine } from "./hooks/useChessEngine";
+import { useCommentaryAudio } from "./hooks/useCommentaryAudio";
 import { Shield, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { THEMES } from "./shared/themes";
 import { THEME_MATCH_MAP } from "./data/matches";
@@ -73,8 +74,10 @@ export default function App() {
   const [themeIdx, setThemeIdx] = useState(0);
   const [appPhase, setAppPhase] = useState<AppPhase>('idle');
   const theme = THEMES[themeIdx];
-  const chess = useChessEngine(THEME_MATCH_MAP[theme.id]);
+  const matchData = THEME_MATCH_MAP[theme.id];
+  const chess = useChessEngine(matchData);
   const currentMeta = THEME_META_MAP[theme.id] ?? null;
+  useCommentaryAudio(theme.id, appPhase === 'playing', currentMeta?.commentarySegments ?? 0);
 
   useEffect(() => {
     setIsPlaying(false);

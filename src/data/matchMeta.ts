@@ -17,6 +17,7 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
     nextEpisode: "Next: The Immortal Game — London, 1851.",
+    commentarySegments: 5,
   },
   arena: {
     title: "The Immortal Game",
