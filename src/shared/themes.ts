@@ -63,7 +63,7 @@ export const THEMES: SceneTheme[] = [
   {
     id: "abyss",
     nameCN: "卡帕不朽局",
-    nameEN: "Kasparov's Immortal",
+    nameEN: "Kasparov",
     dot: "#2aaabf",
     backdrop:
       "radial-gradient(circle at 20% 18%, rgba(0,120,160,0.22), transparent 30%), " +
@@ -114,7 +114,7 @@ export const THEMES: SceneTheme[] = [
   {
     id: "arena",
     nameCN: "不朽名局",
-    nameEN: "The Immortal Game",
+    nameEN: "Immortal",
     dot: "#ffcc33",
     backdrop:
       "radial-gradient(circle at 50% 10%, rgba(255,180,60,0.18), transparent 30%), " +
@@ -165,7 +165,7 @@ export const THEMES: SceneTheme[] = [
   {
     id: "molten",
     nameCN: "世纪之局",
-    nameEN: "Game of the Century",
+    nameEN: "Century",
     dot: "#ff7030",
     backdrop:
       "radial-gradient(circle at 50% 10%, rgba(220,80,0,0.3), transparent 26%), " +
@@ -216,7 +216,7 @@ export const THEMES: SceneTheme[] = [
   {
     id: "frost",
     nameCN: "常青名局",
-    nameEN: "The Evergreen Game",
+    nameEN: "Evergreen",
     dot: "#8be0ff",
     backdrop:
       "radial-gradient(circle at 50% 20%, rgba(80,160,220,0.2), transparent 28%), " +
@@ -267,7 +267,7 @@ export const THEMES: SceneTheme[] = [
   {
     id: "jade",
     nameCN: "歌剧院局",
-    nameEN: "The Opera Game",
+    nameEN: "Opera",
     dot: "#00e878",
     backdrop:
       "radial-gradient(circle at 24% 20%, rgba(0,180,80,0.22), transparent 28%), " +
