@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback } from 'react';
 export function useCommentaryAudio(
   themeId: string,
   isGameActive: boolean,
+  isPaused: boolean,
   segments = 0,
   commentaryVol = 1.0,
   bgVol = 0.18,
@@ -62,6 +63,18 @@ export function useCommentaryAudio(
 
     return stopAll;
   }, [isGameActive, themeId, segments, stopAll, playSegment]);
+
+  // Pause / resume without resetting playback position
+  useEffect(() => {
+    if (!isGameActive) return;
+    if (isPaused) {
+      commentaryRef.current?.pause();
+      bgRef.current?.pause();
+    } else {
+      commentaryRef.current?.play().catch(() => {});
+      bgRef.current?.play().catch(() => {});
+    }
+  }, [isPaused, isGameActive]);
 
   // Live volume updates — no audio restart needed
   useEffect(() => {

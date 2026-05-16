@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import gsap from "gsap";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
+import { PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
+import { CinematicCamera } from "./components/3d/CinematicCamera";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
 import { Board } from "./components/3d/Board";
@@ -17,60 +19,82 @@ import { THEME_MATCH_MAP } from "./data/matches";
 import { THEME_META_MAP } from "./data/matchMeta";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-
-// Custom component to bridge arrow keys and OrbitControls
-function CameraController({ isPlaying }: { isPlaying: boolean }) {
-  const controlsRef = useRef<OrbitControlsImpl>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!controlsRef.current) return;
-      const controls = controlsRef.current;
-      const rotateStep = 0.15;
-      const angleStep = 0.08;
-
-      switch (e.key) {
-        case "ArrowLeft":
-          controls.setAzimuthalAngle(controls.getAzimuthalAngle() + rotateStep);
-          break;
-        case "ArrowRight":
-          controls.setAzimuthalAngle(controls.getAzimuthalAngle() - rotateStep);
-          break;
-        case "ArrowUp":
-          controls.setPolarAngle(Math.max(controls.minPolarAngle, controls.getPolarAngle() - angleStep));
-          break;
-        case "ArrowDown":
-          controls.setPolarAngle(Math.min(controls.maxPolarAngle, controls.getPolarAngle() + angleStep));
-          break;
-      }
-      controls.update();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  return (
-    <OrbitControls
-      ref={controlsRef}
-      enablePan={false}
-      enableDamping={true}
-      dampingFactor={0.1}
-      maxPolarAngle={Math.PI / 2.1}
-      minDistance={5}
-      maxDistance={15}
-      autoRotate={!isPlaying}
-      autoRotateSpeed={0.5}
-    />
-  );
-}
 
 type AppPhase = 'idle' | 'intro' | 'playing' | 'outro';
 
 const COMMENTARY_LEVELS = [0, 0.4, 0.7, 1.0] as const;
 const BG_LEVELS = [0, 0.1, 0.18, 0.35] as const;
 const VOLUME_ICONS = [VolumeX, Volume, Volume1, Volume2] as const;
+
+function ChessTitle({ appPhase, currentStep, totalSteps }: {
+  appPhase: AppPhase;
+  currentStep: number;
+  totalSteps: number;
+}) {
+  const frontRef = useRef<HTMLSpanElement>(null);
+  const backRef  = useRef<HTMLSpanElement>(null);
+  const faceRef  = useRef<'chess' | 'counter'>('chess');
+
+  useEffect(() => {
+    gsap.set(backRef.current, {
+      opacity: 0, rotateX: 90,
+      transformPerspective: 250, transformOrigin: "center top",
+    });
+  }, []);
+
+  useEffect(() => {
+    const wantCounter = appPhase !== 'idle';
+    if (wantCounter && faceRef.current === 'chess') {
+      faceRef.current = 'counter';
+      gsap.killTweensOf([frontRef.current, backRef.current]);
+      gsap.to(frontRef.current, {
+        opacity: 0, rotateX: -90,
+        transformPerspective: 250, transformOrigin: "center bottom",
+        duration: 0.22, ease: "power2.in",
+        onComplete: () => gsap.to(backRef.current, {
+          opacity: 1, rotateX: 0, duration: 0.22, ease: "power2.out",
+        }),
+      });
+    } else if (!wantCounter && faceRef.current === 'counter') {
+      faceRef.current = 'chess';
+      gsap.killTweensOf([frontRef.current, backRef.current]);
+      gsap.to(backRef.current, {
+        opacity: 0, rotateX: 90, duration: 0.22, ease: "power2.in",
+        onComplete: () => gsap.to(frontRef.current, {
+          opacity: 1, rotateX: 0,
+          transformPerspective: 250, transformOrigin: "center bottom",
+          duration: 0.22, ease: "power2.out",
+        }),
+      });
+    }
+  }, [appPhase]);
+
+  useEffect(() => {
+    if (faceRef.current === 'counter' && backRef.current) {
+      gsap.fromTo(backRef.current, { y: -4 }, { y: 0, duration: 0.18, ease: "power2.out" });
+    }
+  }, [currentStep]);
+
+  const stepStr = String(currentStep + 1).padStart(2, "0");
+
+  return (
+    <div className="relative">
+      <span
+        ref={frontRef}
+        className="flex items-center text-lg font-bold tracking-[0.2em] uppercase text-phantasm-accent-light whitespace-nowrap"
+      >
+        CHESS
+      </span>
+      <span
+        ref={backRef}
+        className="absolute inset-0 flex items-center text-lg font-bold font-mono tabular-nums tracking-[0.15em] text-phantasm-accent-light whitespace-nowrap"
+      >
+        {stepStr}
+        <span className="text-white/40 text-sm font-light tracking-normal"> /{totalSteps}</span>
+      </span>
+    </div>
+  );
+}
 
 export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -88,7 +112,7 @@ export default function App() {
   const currentMeta = THEME_META_MAP[theme.id] ?? null;
   const commentaryVol = COMMENTARY_LEVELS[commentaryLvlIdx];
   const bgVol = BG_LEVELS[bgLvlIdx];
-  useCommentaryAudio(theme.id, appPhase === 'playing', currentMeta?.commentarySegments ?? 0, commentaryVol, bgVol);
+  useCommentaryAudio(theme.id, appPhase === 'playing', !isPlaying, currentMeta?.commentarySegments ?? 0, commentaryVol, bgVol);
 
   useEffect(() => {
     const onFsChange = () => {
@@ -207,9 +231,7 @@ export default function App() {
           <div className="flex items-center justify-between px-3 sm:px-8 h-12 sm:h-14">
             <div className="flex items-center gap-2 sm:gap-3">
               <Shield className="text-phantasm-accent-light shrink-0" size={18} />
-              <h1 className="hidden sm:block text-lg font-light tracking-[0.2em] uppercase text-white">
-                <span className="text-phantasm-accent-light font-bold">Phantasm Chess</span>
-              </h1>
+              <ChessTitle appPhase={appPhase} currentStep={chess.currentStep} totalSteps={chess.history.length} />
 
               {/* Scene switcher */}
               <div className="flex items-center gap-1 sm:gap-1.5 sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10">
@@ -229,7 +251,7 @@ export default function App() {
                       className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shadow-[0_0_12px_currentColor] shrink-0"
                       style={{ backgroundColor: t.dot, color: t.dot }}
                     />
-                    <span className={cn("hidden max-w-24 truncate", i === themeIdx ? "sm:inline" : "lg:inline")}>
+                    <span className={cn("hidden max-w-24 truncate", i === themeIdx ? "md:inline" : "lg:inline")}>
                       {t.nameEN}
                     </span>
                   </button>
@@ -268,11 +290,6 @@ export default function App() {
               >
                 <SkipForward size={15} className="text-slate-300" />
               </button>
-              <span className="text-xs sm:text-lg font-mono tabular-nums text-white ml-0.5 sm:ml-2">
-                {String(chess.currentStep + 1).padStart(2, "0")}
-                <span className="text-phantasm-accent-light opacity-50 text-[10px] sm:text-base"> / {chess.history.length}</span>
-              </span>
-
               {/* Fullscreen toggle */}
               <div className="flex items-center pl-1.5 sm:pl-3 border-l border-white/10">
                 <button
@@ -354,7 +371,7 @@ export default function App() {
             <Suspense fallback={null}>
               <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />
               
-              <CameraController isPlaying={isPlaying} />
+              <CinematicCamera isPlaying={isPlaying} />
 
               <color attach="background" args={[theme.background]} />
               <fog attach="fog" args={[theme.fogColor, theme.fogNear, theme.fogFar]} />
