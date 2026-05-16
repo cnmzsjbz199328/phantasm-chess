@@ -10,11 +10,11 @@ interface UIProps {
 
 export function UIOverlay({ narrative, currentStep, history, onSkip }: UIProps) {
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col justify-end px-8 pb-6 z-10 font-sans">
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-end px-3 sm:px-8 pb-4 sm:pb-6 z-10 font-sans">
 
       {/* Narrative — barely-there ambient inscription */}
       {narrative && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 w-full max-w-lg text-center pointer-events-none">
+        <div className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 w-full max-w-sm sm:max-w-lg px-4 sm:px-0 text-center pointer-events-none">
           <p className="text-[10px] text-white/20 font-light tracking-[0.4em] uppercase leading-loose">
             {narrative}
           </p>

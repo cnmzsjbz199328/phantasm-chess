@@ -11,7 +11,7 @@ import { IntroOverlay } from "./components/IntroOverlay";
 import { OutroOverlay } from "./components/OutroOverlay";
 import { useChessEngine } from "./hooks/useChessEngine";
 import { useCommentaryAudio } from "./hooks/useCommentaryAudio";
-import { Shield, Play, Pause, SkipBack, SkipForward, VolumeX, Volume, Volume1, Volume2 } from "lucide-react";
+import { Shield, Play, Pause, SkipBack, SkipForward, VolumeX, Volume, Volume1, Volume2, Maximize2, Minimize2 } from "lucide-react";
 import { THEMES } from "./shared/themes";
 import { THEME_MATCH_MAP } from "./data/matches";
 import { THEME_META_MAP } from "./data/matchMeta";
@@ -79,6 +79,9 @@ export default function App() {
   const [appPhase, setAppPhase] = useState<AppPhase>('idle');
   const [commentaryLvlIdx, setCommentaryLvlIdx] = useState(3);
   const [bgLvlIdx, setBgLvlIdx] = useState(2);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const headerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const theme = THEMES[themeIdx];
   const matchData = THEME_MATCH_MAP[theme.id];
   const chess = useChessEngine(matchData);
@@ -86,6 +89,42 @@ export default function App() {
   const commentaryVol = COMMENTARY_LEVELS[commentaryLvlIdx];
   const bgVol = BG_LEVELS[bgLvlIdx];
   useCommentaryAudio(theme.id, appPhase === 'playing', currentMeta?.commentarySegments ?? 0, commentaryVol, bgVol);
+
+  useEffect(() => {
+    const onFsChange = () => {
+      const entering = !!document.fullscreenElement;
+      setIsFullscreen(entering);
+      if (entering) {
+        headerTimerRef.current = setTimeout(() => setHeaderVisible(false), 2000);
+      } else {
+        if (headerTimerRef.current) clearTimeout(headerTimerRef.current);
+        setHeaderVisible(true);
+      }
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      if (headerTimerRef.current) clearTimeout(headerTimerRef.current);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const showHeader = useCallback(() => {
+    if (headerTimerRef.current) clearTimeout(headerTimerRef.current);
+    setHeaderVisible(true);
+  }, []);
+
+  const scheduleHideHeader = useCallback(() => {
+    if (headerTimerRef.current) clearTimeout(headerTimerRef.current);
+    headerTimerRef.current = setTimeout(() => setHeaderVisible(false), 1500);
+  }, []);
 
   useEffect(() => {
     setIsPlaying(false);
@@ -155,96 +194,159 @@ export default function App() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.22)_64%,rgba(0,0,0,0.62)_100%)] pointer-events-none" />
 
         {/* Header */}
-        <header className="h-14 shrink-0 border-b border-white/5 flex items-center px-8 justify-between bg-phantasm-bg/80 backdrop-blur-xl z-20">
-          <div className="flex items-center gap-3">
-            <Shield className="text-phantasm-accent-light" size={20} />
-            <h1 className="text-lg font-light tracking-[0.2em] uppercase text-white">
-              <span className="text-phantasm-accent-light font-bold">Phantasm Chess</span>
-            </h1>
+        <header
+          className={cn(
+            "shrink-0 border-b border-white/5 bg-phantasm-bg/80 backdrop-blur-xl z-20 transition-[opacity,transform] duration-300",
+            isFullscreen && "absolute top-0 left-0 right-0 z-30",
+            isFullscreen && !headerVisible && "opacity-0 -translate-y-full pointer-events-none"
+          )}
+          onMouseEnter={isFullscreen ? showHeader : undefined}
+          onMouseLeave={isFullscreen ? scheduleHideHeader : undefined}
+        >
+          {/* Primary row */}
+          <div className="flex items-center justify-between px-3 sm:px-8 h-12 sm:h-14">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Shield className="text-phantasm-accent-light shrink-0" size={18} />
+              <h1 className="hidden sm:block text-lg font-light tracking-[0.2em] uppercase text-white">
+                <span className="text-phantasm-accent-light font-bold">Phantasm Chess</span>
+              </h1>
 
-            {/* Scene switcher */}
-            <div className="flex items-center gap-1.5 ml-4 pl-4 border-l border-white/10">
-              {THEMES.map((t, i) => (
+              {/* Scene switcher */}
+              <div className="flex items-center gap-1 sm:gap-1.5 sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10">
+                {THEMES.map((t, i) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setThemeIdx(i)}
+                    title={t.nameCN}
+                    className={cn(
+                      "group flex h-7 sm:h-8 items-center gap-1.5 sm:gap-2 rounded-md border px-1.5 sm:px-2 text-xs transition-all duration-300",
+                      i === themeIdx
+                        ? "border-white/15 bg-white/10 text-white"
+                        : "border-transparent bg-transparent text-white/45 hover:bg-white/5 hover:text-white/80"
+                    )}
+                  >
+                    <span
+                      className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shadow-[0_0_12px_currentColor] shrink-0"
+                      style={{ backgroundColor: t.dot, color: t.dot }}
+                    />
+                    <span className={cn("hidden max-w-24 truncate", i === themeIdx ? "sm:inline" : "lg:inline")}>
+                      {t.nameEN}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <button
+                onClick={handlePrevStep}
+                disabled={controlsLocked}
+                className={cn(
+                  "p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95",
+                  controlsLocked && "cursor-not-allowed opacity-45 hover:bg-white/5 active:scale-100"
+                )}
+              >
+                <SkipBack size={15} className="text-slate-300" />
+              </button>
+              <button
+                onClick={handlePlayPause}
+                disabled={playButtonDisabled}
+                className={cn(
+                  "px-3 sm:px-4 py-1.5 sm:py-2 bg-phantasm-accent hover:bg-phantasm-accent-light rounded-lg transition-all active:scale-95 border border-white/10",
+                  playButtonDisabled && "cursor-not-allowed opacity-60 hover:bg-phantasm-accent active:scale-100"
+                )}
+              >
+                {isPlaying ? <Pause size={15} fill="white" /> : <Play size={15} fill="white" />}
+              </button>
+              <button
+                onClick={handleNextStep}
+                disabled={controlsLocked}
+                className={cn(
+                  "p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95",
+                  controlsLocked && "cursor-not-allowed opacity-45 hover:bg-white/5 active:scale-100"
+                )}
+              >
+                <SkipForward size={15} className="text-slate-300" />
+              </button>
+              <span className="text-xs sm:text-lg font-mono tabular-nums text-white ml-0.5 sm:ml-2">
+                {String(chess.currentStep + 1).padStart(2, "0")}
+                <span className="text-phantasm-accent-light opacity-50 text-[10px] sm:text-base"> / {chess.history.length}</span>
+              </span>
+
+              {/* Fullscreen toggle */}
+              <div className="flex items-center pl-1.5 sm:pl-3 border-l border-white/10">
                 <button
-                  key={t.id}
-                  onClick={() => setThemeIdx(i)}
-                  title={t.nameCN}
-                  className={cn(
-                    "group flex h-8 items-center gap-2 rounded-md border px-2 text-xs transition-all duration-300",
-                    i === themeIdx
-                      ? "border-white/15 bg-white/10 text-white"
-                      : "border-transparent bg-transparent text-white/45 hover:bg-white/5 hover:text-white/80"
-                  )}
+                  onClick={toggleFullscreen}
+                  title={isFullscreen ? "退出全屏" : "全屏"}
+                  className="p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
                 >
-                  <span
-                    className="h-2.5 w-2.5 rounded-full shadow-[0_0_12px_currentColor]"
-                    style={{ backgroundColor: t.dot, color: t.dot }}
-                  />
-                  <span className={cn("hidden max-w-24 truncate sm:inline", i === themeIdx ? "inline" : "lg:inline")}>
-                    {t.nameEN}
-                  </span>
+                  {isFullscreen
+                    ? <Minimize2 size={15} className="text-slate-300" />
+                    : <Maximize2 size={15} className="text-slate-300" />}
                 </button>
-              ))}
+              </div>
+
+              {/* Volume controls — desktop only */}
+              <div className="hidden sm:flex items-center gap-1.5 pl-3 border-l border-white/10">
+                <button
+                  onClick={() => setCommentaryLvlIdx(i => (i + 1) % COMMENTARY_LEVELS.length)}
+                  title={`解说音量 ${Math.round(commentaryVol * 100)}%`}
+                  className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
+                >
+                  {(() => { const Icon = VOLUME_ICONS[commentaryLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
+                  <span className="text-[10px] text-slate-400 leading-none">解</span>
+                </button>
+                <button
+                  onClick={() => setBgLvlIdx(i => (i + 1) % BG_LEVELS.length)}
+                  title={`背景音量 ${Math.round(bgVol * 100)}%`}
+                  className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
+                >
+                  {(() => { const Icon = VOLUME_ICONS[bgLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
+                  <span className="text-[10px] text-slate-400 leading-none">背</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Mobile volume strip */}
+          <div className="sm:hidden flex items-center justify-end gap-2 px-3 pb-2">
             <button
-              onClick={handlePrevStep}
-              disabled={controlsLocked}
-              className={cn(
-                "p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95",
-                controlsLocked && "cursor-not-allowed opacity-45 hover:bg-white/5 active:scale-100"
-              )}
+              onClick={() => setCommentaryLvlIdx(i => (i + 1) % COMMENTARY_LEVELS.length)}
+              title={`解说音量 ${Math.round(commentaryVol * 100)}%`}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95 text-[10px] text-slate-400"
             >
-              <SkipBack size={16} className="text-slate-300" />
+              {(() => { const Icon = VOLUME_ICONS[commentaryLvlIdx]; return <Icon size={12} className="text-slate-300" />; })()}
+              解说
             </button>
             <button
-              onClick={handlePlayPause}
-              disabled={playButtonDisabled}
-              className={cn(
-                "px-4 py-2 bg-phantasm-accent hover:bg-phantasm-accent-light rounded-lg transition-all active:scale-95 border border-white/10",
-                playButtonDisabled && "cursor-not-allowed opacity-60 hover:bg-phantasm-accent active:scale-100"
-              )}
+              onClick={() => setBgLvlIdx(i => (i + 1) % BG_LEVELS.length)}
+              title={`背景音量 ${Math.round(bgVol * 100)}%`}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95 text-[10px] text-slate-400"
             >
-              {isPlaying ? <Pause size={16} fill="white" /> : <Play size={16} fill="white" />}
+              {(() => { const Icon = VOLUME_ICONS[bgLvlIdx]; return <Icon size={12} className="text-slate-300" />; })()}
+              背景
             </button>
-            <button
-              onClick={handleNextStep}
-              disabled={controlsLocked}
-              className={cn(
-                "p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95",
-                controlsLocked && "cursor-not-allowed opacity-45 hover:bg-white/5 active:scale-100"
-              )}
-            >
-              <SkipForward size={16} className="text-slate-300" />
-            </button>
-            <span className="text-lg font-mono tabular-nums text-white ml-2">
-              {String(chess.currentStep + 1).padStart(2, "0")}
-              <span className="text-phantasm-accent-light opacity-50 text-base"> / {chess.history.length}</span>
-            </span>
-
-            {/* Volume controls */}
-            <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
-              <button
-                onClick={() => setCommentaryLvlIdx(i => (i + 1) % COMMENTARY_LEVELS.length)}
-                title={`解说音量 ${Math.round(commentaryVol * 100)}%`}
-                className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
-              >
-                {(() => { const Icon = VOLUME_ICONS[commentaryLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
-                <span className="text-[10px] text-slate-400 leading-none">解</span>
-              </button>
-              <button
-                onClick={() => setBgLvlIdx(i => (i + 1) % BG_LEVELS.length)}
-                title={`背景音量 ${Math.round(bgVol * 100)}%`}
-                className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
-              >
-                {(() => { const Icon = VOLUME_ICONS[bgLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
-                <span className="text-[10px] text-slate-400 leading-none">背</span>
-              </button>
-            </div>
           </div>
         </header>
+
+        {/* Fullscreen: top hit-zone triggers header reveal on hover */}
+        {isFullscreen && !headerVisible && (
+          <div
+            className="absolute top-0 left-0 right-0 h-16 z-20 pointer-events-auto"
+            onMouseEnter={showHeader}
+          />
+        )}
+
+        {/* Fullscreen: persistent exit button while header is hidden */}
+        {isFullscreen && !headerVisible && (
+          <button
+            onClick={toggleFullscreen}
+            title="退出全屏"
+            className="absolute top-3 right-3 z-30 p-1.5 rounded-lg bg-black/20 hover:bg-black/50 border border-white/10 transition-all opacity-30 hover:opacity-90 active:scale-95"
+          >
+            <Minimize2 size={13} className="text-white" />
+          </button>
+        )}
 
         {/* 3D Scene */}
         <div className="flex-1 relative z-10">
