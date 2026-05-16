@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Canvas } from "@react-three/fiber";
-import { PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
-import { CinematicCamera } from "./components/3d/CinematicCamera";
+import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
 import { Board } from "./components/3d/Board";
@@ -21,6 +21,52 @@ import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 
 type AppPhase = 'idle' | 'intro' | 'playing' | 'outro';
+
+function CinematicCamera({ isPlaying }: { isPlaying: boolean }) {
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!controlsRef.current) return;
+      const controls = controlsRef.current;
+      const rotateStep = 0.15;
+      const angleStep  = 0.08;
+      switch (e.key) {
+        case "ArrowLeft":
+          controls.setAzimuthalAngle(controls.getAzimuthalAngle() + rotateStep);
+          break;
+        case "ArrowRight":
+          controls.setAzimuthalAngle(controls.getAzimuthalAngle() - rotateStep);
+          break;
+        case "ArrowUp":
+          controls.setPolarAngle(Math.max(controls.minPolarAngle, controls.getPolarAngle() - angleStep));
+          break;
+        case "ArrowDown":
+          controls.setPolarAngle(Math.min(controls.maxPolarAngle, controls.getPolarAngle() + angleStep));
+          break;
+        default:
+          return;
+      }
+      controls.update();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enablePan={false}
+      enableDamping
+      dampingFactor={0.1}
+      maxPolarAngle={Math.PI / 2.1}
+      minDistance={5}
+      maxDistance={15}
+      autoRotate={!isPlaying}
+      autoRotateSpeed={0.5}
+    />
+  );
+}
 
 const COMMENTARY_LEVELS = [0, 0.4, 0.7, 1.0] as const;
 const BG_LEVELS = [0, 0.1, 0.18, 0.35] as const;
