@@ -20,7 +20,7 @@ import { THEME_META_MAP } from "./data/matchMeta";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 
-type AppPhase = 'idle' | 'intro' | 'playing' | 'outro';
+type AppPhase = 'idle' | 'intro' | 'playing' | 'finishing' | 'outro';
 
 function CinematicCamera({ isPlaying }: { isPlaying: boolean }) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -158,7 +158,26 @@ export default function App() {
   const currentMeta = THEME_META_MAP[theme.id] ?? null;
   const commentaryVol = COMMENTARY_LEVELS[commentaryLvlIdx];
   const bgVol = BG_LEVELS[bgLvlIdx];
-  useCommentaryAudio(theme.id, appPhase === 'playing', !isPlaying, currentMeta?.commentarySegments ?? 0, commentaryVol, bgVol);
+  const handleCommentaryEnd = useCallback(() => {
+    setAppPhase(prev => prev === 'finishing' ? 'outro' : prev);
+  }, []);
+
+  useCommentaryAudio(
+    theme.id,
+    appPhase === 'playing' || appPhase === 'finishing',
+    !isPlaying && appPhase !== 'finishing',
+    currentMeta?.commentarySegments ?? 0,
+    commentaryVol,
+    bgVol,
+    handleCommentaryEnd,
+  );
+
+  // Fallback: if audio fails to fire onended, advance to outro after 15 s
+  useEffect(() => {
+    if (appPhase !== 'finishing') return;
+    const timer = setTimeout(() => setAppPhase('outro'), 15_000);
+    return () => clearTimeout(timer);
+  }, [appPhase]);
 
   useEffect(() => {
     const onFsChange = () => {
@@ -210,7 +229,7 @@ export default function App() {
           chess.nextStep();
         } else {
           setIsPlaying(false);
-          setAppPhase(currentMeta ? 'outro' : 'idle');
+          setAppPhase(currentMeta ? 'finishing' : 'idle');
         }
       }, 4500);
     }
@@ -251,6 +270,7 @@ export default function App() {
 
   const playButtonDisabled =
     appPhase === 'intro' ||
+    appPhase === 'finishing' ||
     appPhase === 'outro' ||
     (appPhase === 'playing' && !isPlaying && controlsLocked);
 

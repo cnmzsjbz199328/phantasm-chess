@@ -56,7 +56,6 @@ export function OutroOverlay({ meta, onClose }: Props) {
         )}
 
         <div className="outro-footer">— Phantasm Chess —</div>
-        <div className="outro-dismiss">Click anywhere to continue</div>
       </div>
     </div>
   );

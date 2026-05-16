@@ -7,6 +7,7 @@ export function useCommentaryAudio(
   segments = 0,
   commentaryVol = 1.0,
   bgVol = 0.18,
+  onCommentaryEnd?: () => void,
 ) {
   const commentaryRef = useRef<HTMLAudioElement | null>(null);
   const bgRef = useRef<HTMLAudioElement | null>(null);
@@ -14,8 +15,10 @@ export function useCommentaryAudio(
   // Refs so playSegment always reads the latest volume without re-creating the callback
   const commentaryVolRef = useRef(commentaryVol);
   const bgVolRef = useRef(bgVol);
+  const onCommentaryEndRef = useRef(onCommentaryEnd);
   commentaryVolRef.current = commentaryVol;
   bgVolRef.current = bgVol;
+  onCommentaryEndRef.current = onCommentaryEnd;
 
   const stopAll = useCallback(() => {
     if (commentaryRef.current) {
@@ -31,7 +34,10 @@ export function useCommentaryAudio(
   }, []);
 
   const playSegment = useCallback((index: number, total: number, theme: string) => {
-    if (index >= total) return;
+    if (index >= total) {
+      onCommentaryEndRef.current?.();
+      return;
+    }
     const audio = new Audio(`/audio/${theme}/seg_${index + 1}.wav`);
     audio.volume = commentaryVolRef.current;
     commentaryRef.current = audio;
@@ -52,6 +58,7 @@ export function useCommentaryAudio(
       const audio = new Audio(`/audio/${themeId}/commentary.mp3`);
       audio.volume = commentaryVolRef.current;
       commentaryRef.current = audio;
+      audio.onended = () => onCommentaryEndRef.current?.();
       audio.play().catch(() => {});
     }
 

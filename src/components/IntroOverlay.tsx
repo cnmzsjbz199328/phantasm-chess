@@ -74,7 +74,6 @@ export function IntroOverlay({ meta, onFinish }: Props) {
         {phase === 'typing' && <span className="intro-cursor">▌</span>}
       </div>
 
-      <div className="intro-skip">点击任意处跳过</div>
     </div>
   );
 }
