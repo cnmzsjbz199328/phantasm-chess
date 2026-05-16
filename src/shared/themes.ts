@@ -62,8 +62,8 @@ export const THEMES: SceneTheme[] = [
   // Dark navy void; cyber-cyan clashes with crimson. The "canonical" WorldStage look.
   {
     id: "abyss",
-    nameCN: "深渊幻域",
-    nameEN: "Abyssal Phantom",
+    nameCN: "卡帕不朽局",
+    nameEN: "Kasparov's Immortal",
     dot: "#2aaabf",
     backdrop:
       "radial-gradient(circle at 20% 18%, rgba(0,120,160,0.22), transparent 30%), " +
@@ -113,8 +113,8 @@ export const THEMES: SceneTheme[] = [
   // Golden hour in the ancient arena. Dusty sand, weathered travertine, and warm torches.
   {
     id: "arena",
-    nameCN: "罗马斗兽场",
-    nameEN: "Roman Colosseum",
+    nameCN: "不朽名局",
+    nameEN: "The Immortal Game",
     dot: "#ffcc33",
     backdrop:
       "radial-gradient(circle at 50% 10%, rgba(255,180,60,0.18), transparent 30%), " +
@@ -164,8 +164,8 @@ export const THEMES: SceneTheme[] = [
   // Volcanic forge. Scorched stone, ember sparks, molten orange and deep red.
   {
     id: "molten",
-    nameCN: "熔炉烈焰",
-    nameEN: "Molten Forge",
+    nameCN: "世纪之局",
+    nameEN: "Game of the Century",
     dot: "#ff7030",
     backdrop:
       "radial-gradient(circle at 50% 10%, rgba(220,80,0,0.3), transparent 26%), " +
@@ -215,8 +215,8 @@ export const THEMES: SceneTheme[] = [
   // Arctic night. Crystalline ice, cold blue light, desolate silence.
   {
     id: "frost",
-    nameCN: "霜境幽灵",
-    nameEN: "Frost Specter",
+    nameCN: "常青名局",
+    nameEN: "The Evergreen Game",
     dot: "#8be0ff",
     backdrop:
       "radial-gradient(circle at 50% 20%, rgba(80,160,220,0.2), transparent 28%), " +
@@ -266,8 +266,8 @@ export const THEMES: SceneTheme[] = [
   // Ancient dark ritual. Poisonous jade seeping through void purple ruin.
   {
     id: "jade",
-    nameCN: "翡翠炼狱",
-    nameEN: "Jade Purgatory",
+    nameCN: "歌剧院局",
+    nameEN: "The Opera Game",
     dot: "#00e878",
     backdrop:
       "radial-gradient(circle at 24% 20%, rgba(0,180,80,0.22), transparent 28%), " +
