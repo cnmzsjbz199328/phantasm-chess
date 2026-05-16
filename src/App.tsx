@@ -11,7 +11,7 @@ import { IntroOverlay } from "./components/IntroOverlay";
 import { OutroOverlay } from "./components/OutroOverlay";
 import { useChessEngine } from "./hooks/useChessEngine";
 import { useCommentaryAudio } from "./hooks/useCommentaryAudio";
-import { Shield, Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Shield, Play, Pause, SkipBack, SkipForward, VolumeX, Volume, Volume1, Volume2 } from "lucide-react";
 import { THEMES } from "./shared/themes";
 import { THEME_MATCH_MAP } from "./data/matches";
 import { THEME_META_MAP } from "./data/matchMeta";
@@ -68,16 +68,24 @@ function CameraController({ isPlaying }: { isPlaying: boolean }) {
 
 type AppPhase = 'idle' | 'intro' | 'playing' | 'outro';
 
+const COMMENTARY_LEVELS = [0, 0.4, 0.7, 1.0] as const;
+const BG_LEVELS = [0, 0.1, 0.18, 0.35] as const;
+const VOLUME_ICONS = [VolumeX, Volume, Volume1, Volume2] as const;
+
 export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [themeIdx, setThemeIdx] = useState(0);
   const [appPhase, setAppPhase] = useState<AppPhase>('idle');
+  const [commentaryLvlIdx, setCommentaryLvlIdx] = useState(3);
+  const [bgLvlIdx, setBgLvlIdx] = useState(2);
   const theme = THEMES[themeIdx];
   const matchData = THEME_MATCH_MAP[theme.id];
   const chess = useChessEngine(matchData);
   const currentMeta = THEME_META_MAP[theme.id] ?? null;
-  useCommentaryAudio(theme.id, appPhase === 'playing', currentMeta?.commentarySegments ?? 0);
+  const commentaryVol = COMMENTARY_LEVELS[commentaryLvlIdx];
+  const bgVol = BG_LEVELS[bgLvlIdx];
+  useCommentaryAudio(theme.id, appPhase === 'playing', currentMeta?.commentarySegments ?? 0, commentaryVol, bgVol);
 
   useEffect(() => {
     setIsPlaying(false);
@@ -160,7 +168,7 @@ export default function App() {
                 <button
                   key={t.id}
                   onClick={() => setThemeIdx(i)}
-                  title={`${t.nameCN} - ${t.nameEN}`}
+                  title={t.nameCN}
                   className={cn(
                     "group flex h-8 items-center gap-2 rounded-md border px-2 text-xs transition-all duration-300",
                     i === themeIdx
@@ -173,7 +181,7 @@ export default function App() {
                     style={{ backgroundColor: t.dot, color: t.dot }}
                   />
                   <span className={cn("hidden max-w-24 truncate sm:inline", i === themeIdx ? "inline" : "lg:inline")}>
-                    {t.nameCN}
+                    {t.nameEN}
                   </span>
                 </button>
               ))}
@@ -215,6 +223,26 @@ export default function App() {
               {String(chess.currentStep + 1).padStart(2, "0")}
               <span className="text-phantasm-accent-light opacity-50 text-base"> / {chess.history.length}</span>
             </span>
+
+            {/* Volume controls */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
+              <button
+                onClick={() => setCommentaryLvlIdx(i => (i + 1) % COMMENTARY_LEVELS.length)}
+                title={`解说音量 ${Math.round(commentaryVol * 100)}%`}
+                className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
+              >
+                {(() => { const Icon = VOLUME_ICONS[commentaryLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
+                <span className="text-[10px] text-slate-400 leading-none">解</span>
+              </button>
+              <button
+                onClick={() => setBgLvlIdx(i => (i + 1) % BG_LEVELS.length)}
+                title={`背景音量 ${Math.round(bgVol * 100)}%`}
+                className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
+              >
+                {(() => { const Icon = VOLUME_ICONS[bgLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
+                <span className="text-[10px] text-slate-400 leading-none">背</span>
+              </button>
+            </div>
           </div>
         </header>
 

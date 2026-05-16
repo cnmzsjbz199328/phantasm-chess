@@ -1,9 +1,20 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-export function useCommentaryAudio(themeId: string, isGameActive: boolean, segments = 0) {
+export function useCommentaryAudio(
+  themeId: string,
+  isGameActive: boolean,
+  segments = 0,
+  commentaryVol = 1.0,
+  bgVol = 0.18,
+) {
   const commentaryRef = useRef<HTMLAudioElement | null>(null);
   const bgRef = useRef<HTMLAudioElement | null>(null);
   const segIndexRef = useRef(0);
+  // Refs so playSegment always reads the latest volume without re-creating the callback
+  const commentaryVolRef = useRef(commentaryVol);
+  const bgVolRef = useRef(bgVol);
+  commentaryVolRef.current = commentaryVol;
+  bgVolRef.current = bgVol;
 
   const stopAll = useCallback(() => {
     if (commentaryRef.current) {
@@ -21,6 +32,7 @@ export function useCommentaryAudio(themeId: string, isGameActive: boolean, segme
   const playSegment = useCallback((index: number, total: number, theme: string) => {
     if (index >= total) return;
     const audio = new Audio(`/audio/${theme}/seg_${index + 1}.wav`);
+    audio.volume = commentaryVolRef.current;
     commentaryRef.current = audio;
     audio.onended = () => playSegment(index + 1, total, theme);
     audio.play().catch(() => {});
@@ -37,18 +49,28 @@ export function useCommentaryAudio(themeId: string, isGameActive: boolean, segme
       playSegment(0, segments, themeId);
     } else {
       const audio = new Audio(`/audio/${themeId}/commentary.mp3`);
+      audio.volume = commentaryVolRef.current;
       commentaryRef.current = audio;
       audio.play().catch(() => {});
     }
 
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    bg.volume = 0.18;
+    bg.volume = bgVolRef.current;
     bgRef.current = bg;
     bg.play().catch(() => {});
 
     return stopAll;
   }, [isGameActive, themeId, segments, stopAll, playSegment]);
+
+  // Live volume updates — no audio restart needed
+  useEffect(() => {
+    if (commentaryRef.current) commentaryRef.current.volume = commentaryVol;
+  }, [commentaryVol]);
+
+  useEffect(() => {
+    if (bgRef.current) bgRef.current.volume = bgVol;
+  }, [bgVol]);
 
   useEffect(() => stopAll, [stopAll]);
 }
