@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Stars, Sparkles } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Environment, Stars, Sparkles } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
@@ -488,9 +488,6 @@ export default function App() {
                 />
               </group>
 
-              {/* y between board top (-0.05) and piece bases (0); 25 mm gap from board
-                  to stay outside iOS depth-buffer z-fight range under bloom + high DPR */}
-              <ContactShadows position={[0, -0.025, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
               <Environment preset="city" />
 
               <EffectComposer enableNormalPass={false}>
