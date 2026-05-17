@@ -19,9 +19,6 @@ export function Board() {
     roughness: 0.5,
     emissive: theme.board.darkEmissive,
     emissiveIntensity: theme.board.emissiveIntensity,
-    polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
   }), [theme]);
 
   const lightMat = useMemo(() => new THREE.MeshStandardMaterial({
@@ -30,9 +27,6 @@ export function Board() {
     roughness: 0.5,
     emissive: theme.board.lightEmissive,
     emissiveIntensity: theme.board.emissiveIntensity,
-    polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
   }), [theme]);
 
   useEffect(() => { if (darkRef.current)  darkRef.current.material  = darkMat;  return () => darkMat.dispose();  }, [darkMat]);
