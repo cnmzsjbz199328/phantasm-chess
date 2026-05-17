@@ -488,7 +488,9 @@ export default function App() {
                 />
               </group>
 
-              <ContactShadows position={[0, -0.049, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
+              {/* y between board top (-0.05) and piece bases (0); 25 mm gap from board
+                  to stay outside iOS depth-buffer z-fight range under bloom + high DPR */}
+              <ContactShadows position={[0, -0.025, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
               <Environment preset="city" />
 
               <EffectComposer enableNormalPass={false}>
