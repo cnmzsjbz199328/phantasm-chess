@@ -456,6 +456,10 @@ export default function App() {
               />
               <pointLight position={[-10, 10, -10]} intensity={theme.pointIntensity} color={theme.pointColor} />
 
+              {/* TEMP perf experiment: ambient Stars + Sparkles disabled to measure
+                  their FPS cost on iPhone. Either delete this whole block, or
+                  uncomment to restore, once the data is in. */}
+              {/*
               <Stars
                 radius={90}
                 depth={60}
@@ -477,6 +481,7 @@ export default function App() {
                   position={[0, s.posY, 0]}
                 />
               ))}
+              */}
 
               <WorldStage />
 
