@@ -58,6 +58,16 @@ useFrame(() => {
 - Use a `wasActive` ref to flush a final update when a condition transitions to false, then skip all subsequent frames.
 - Never create `THREE` objects (geometries, materials, vectors) inside `useFrame`.
 
+### Performance Checklist When Adding R3F / drei Components
+
+Before merging a PR that introduces a new R3F or drei component, answer these three questions:
+
+1. **Does it open a RenderTarget?** Helpers like `ContactShadows`, `Reflector`, `AccumulativeShadows`, `MeshTransmissionMaterial`, `MotionBlur` re-render the scene into an offscreen texture each frame. Read the source or props (`frames`, `resolution`, `samples`) and pick the cheapest setting that meets the visual bar. Default `frames={Infinity}` is rarely the right answer.
+2. **Does it allocate Three.js objects on the hot path?** `new THREE.Vector3()` / `new THREE.Color()` / `gsap.to()` inside `useFrame` or per-render is a leak vector. Hoist to `useMemo` or module scope.
+3. **Does it keep working when invisible?** A component hidden via `opacity=0` still runs `useFrame` and material updates. Unmount (`return null`) instead of hiding when the cost is non-trivial.
+
+Append `?stats=1` to the dev or production URL to mount the drei `<Stats />` overlay (FPS / ms / memory). Use it on the lowest-end target device before claiming a change has no perf impact.
+
 ### GSAP + R3F Animation
 
 Mutate `Group.position` / `Group.rotation` via GSAP; R3F renders the result every frame without React re-renders. Always kill in-flight tweens before starting a new one:

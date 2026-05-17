@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, Stars, Sparkles } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Environment, Stars, Sparkles, Stats } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
@@ -21,6 +21,8 @@ import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 
 type AppPhase = 'idle' | 'intro' | 'playing' | 'finishing' | 'outro';
+
+const SHOW_STATS = new URLSearchParams(window.location.search).has('stats');
 
 function CinematicCamera({ isPlaying }: { isPlaying: boolean }) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -434,6 +436,7 @@ export default function App() {
         {/* 3D Scene */}
         <div className="flex-1 relative z-10">
           <Canvas shadows dpr={[1, 2]}>
+            {SHOW_STATS && <Stats />}
             <Suspense fallback={null}>
               <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />
               
