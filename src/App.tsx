@@ -488,7 +488,7 @@ export default function App() {
                 />
               </group>
 
-              <ContactShadows position={[0, 0.005, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
+              <ContactShadows position={[0, -0.049, 0]} opacity={0.4} scale={10} blur={2} far={1.5} />
               <Environment preset="city" />
 
               <EffectComposer enableNormalPass={false}>
