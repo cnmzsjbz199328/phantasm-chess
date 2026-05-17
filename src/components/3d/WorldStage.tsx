@@ -23,7 +23,7 @@ function Ground({
         <planeGeometry args={[100, 100]} />
         <meshStandardMaterial color={groundColor} roughness={0.97} metalness={0.03} />
       </mesh>
-      {/* 1 cm above bedrock to avoid z-fight on low-precision depth buffers (iOS) */}
+      {/* Gap must stay >1 mm — coplanar layers z-fight on low-precision depth buffers */}
       <mesh position={[0, G + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[22, 22]} />
         <meshStandardMaterial
