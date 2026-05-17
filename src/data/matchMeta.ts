@@ -35,6 +35,7 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
     nextEpisode: "Next: The Game of the Century — New York, 1956.",
+    commentarySegments: 5,
   },
   molten: {
     title: "The Game of the Century",
@@ -52,6 +53,7 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
     nextEpisode: "Next: The Opera Game — Paris, 1858.",
+    commentarySegments: 5,
   },
   frost: {
     title: "The Evergreen Game",
@@ -69,6 +71,7 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
     nextEpisode: "Next: Kasparov's Immortal — Wijk aan Zee, 1999.",
+    commentarySegments: 5,
   },
   jade: {
     title: "The Opera Game",
@@ -86,5 +89,6 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
     nextEpisode: "Next: The Evergreen Game — Berlin, 1852.",
+    commentarySegments: 5,
   },
 };

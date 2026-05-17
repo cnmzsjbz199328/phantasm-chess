@@ -24,6 +24,24 @@ type AppPhase = 'idle' | 'intro' | 'playing' | 'finishing' | 'outro';
 
 const SHOW_STATS = new URLSearchParams(window.location.search).has('stats');
 
+// Keeps the AudioContext alive across the intro so iOS Safari doesn't revoke
+// the audio session before HTMLAudioElement.play() is called from a setTimeout.
+let _audioUnlockCtx: AudioContext | null = null;
+function unlockAudioSession() {
+  if (_audioUnlockCtx) return;
+  try {
+    const Ctx = (window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+    if (!Ctx) return;
+    _audioUnlockCtx = new Ctx();
+    const buf = _audioUnlockCtx.createBuffer(1, 1, 22050);
+    const src = _audioUnlockCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(_audioUnlockCtx.destination);
+    src.start(0);
+    void _audioUnlockCtx.resume();
+  } catch { /* best-effort */ }
+}
+
 function CinematicCamera({ isPlaying }: { isPlaying: boolean }) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
@@ -247,6 +265,7 @@ export default function App() {
   };
   const handlePlayPause = () => {
     if (appPhase === 'idle') {
+      unlockAudioSession();
       chess.goToStep(0);
       if (currentMeta) {
         setAppPhase('intro');
