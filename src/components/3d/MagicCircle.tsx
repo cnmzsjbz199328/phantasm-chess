@@ -81,7 +81,7 @@ const PALETTE = {
 export function DormantCircle({ position, side }: { position: Vec3; side: "w" | "b" }) {
   return (
     <group position={position}>
-      <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+      <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <mesh geometry={SHARED_GEOS.outerRing} material={DORMANT_MATS[side].ring} />
         <lineSegments geometry={SHARED_GEOS.hexagram} material={DORMANT_MATS[side].line} />
         <mesh geometry={SHARED_GEOS.innerRing} material={DORMANT_MATS[side].ring} />
@@ -197,7 +197,7 @@ export function MagicCircle({ position, side, onReady, dimming }: MagicCirclePro
   return (
     <group position={position}>
       {/* Flat geometry – inside this rotated group, local Z = world Y, so rotation.z spins rings in place */}
-      <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+      <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <mesh ref={outerRingRef} geometry={SHARED_GEOS.outerRing} material={mats.outer} />
         <lineSegments              geometry={SHARED_GEOS.ticks}    material={mats.ticks} />
         <mesh ref={midRingRef}   geometry={SHARED_GEOS.midRing}   material={mats.mid}   />
