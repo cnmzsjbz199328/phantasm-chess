@@ -20,7 +20,7 @@ import { THEME_META_MAP } from "./data/matchMeta";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 
-type AppPhase = 'idle' | 'intro' | 'playing' | 'finishing' | 'outro';
+type AppPhase = 'idle' | 'intro' | 'playing' | 'finishing' | 'epilogue' | 'outro';
 
 const SHOW_STATS = new URLSearchParams(window.location.search).has('stats');
 
@@ -42,7 +42,7 @@ function unlockAudioSession() {
   } catch { /* best-effort */ }
 }
 
-function CinematicCamera({ isPlaying }: { isPlaying: boolean }) {
+function CinematicCamera({ isPlaying, rotateSpeed }: { isPlaying: boolean; rotateSpeed: number }) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ function CinematicCamera({ isPlaying }: { isPlaying: boolean }) {
       minDistance={5}
       maxDistance={15}
       autoRotate={!isPlaying}
-      autoRotateSpeed={0.5}
+      autoRotateSpeed={rotateSpeed}
     />
   );
 }
@@ -179,25 +179,33 @@ export default function App() {
   const commentaryVol = COMMENTARY_LEVELS[commentaryLvlIdx];
   const bgVol = BG_LEVELS[bgLvlIdx];
   const handleCommentaryEnd = useCallback(() => {
-    setAppPhase(prev => prev === 'finishing' ? 'outro' : prev);
+    setAppPhase(prev => prev === 'finishing' ? 'epilogue' : prev);
   }, []);
 
-  useCommentaryAudio(
+  const { fadeBgOut } = useCommentaryAudio(
     theme.id,
-    appPhase === 'playing' || appPhase === 'finishing',
-    !isPlaying && appPhase !== 'finishing',
+    appPhase === 'playing' || appPhase === 'finishing' || appPhase === 'epilogue' || appPhase === 'outro',
+    !isPlaying && appPhase === 'playing',
     currentMeta?.commentarySegments ?? 0,
     commentaryVol,
     bgVol,
     handleCommentaryEnd,
   );
 
-  // Fallback: if audio fails to fire onended, advance to outro after 15 s
+  // Fallback: if audio fails to fire onended, advance to epilogue after 15 s
   useEffect(() => {
     if (appPhase !== 'finishing') return;
-    const timer = setTimeout(() => setAppPhase('outro'), 15_000);
+    const timer = setTimeout(() => setAppPhase('epilogue'), 15_000);
     return () => clearTimeout(timer);
   }, [appPhase]);
+
+  // Epilogue: fade BGM over 8 s (5 s here + 3 s into outro), then enter outro
+  useEffect(() => {
+    if (appPhase !== 'epilogue') return;
+    fadeBgOut(8000);
+    const timer = setTimeout(() => setAppPhase('outro'), 5000);
+    return () => clearTimeout(timer);
+  }, [appPhase, fadeBgOut]);
 
   useEffect(() => {
     const onFsChange = () => {
@@ -292,6 +300,7 @@ export default function App() {
   const playButtonDisabled =
     appPhase === 'intro' ||
     appPhase === 'finishing' ||
+    appPhase === 'epilogue' ||
     appPhase === 'outro' ||
     (appPhase === 'playing' && !isPlaying && controlsLocked);
 
@@ -459,7 +468,10 @@ export default function App() {
             <Suspense fallback={null}>
               <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />
               
-              <CinematicCamera isPlaying={isPlaying} />
+              <CinematicCamera
+                isPlaying={isPlaying}
+                rotateSpeed={appPhase === 'epilogue' || appPhase === 'outro' ? 0.2 : 0.5}
+              />
 
               <color attach="background" args={[theme.background]} />
               <fog attach="fog" args={[theme.fogColor, theme.fogNear, theme.fogFar]} />

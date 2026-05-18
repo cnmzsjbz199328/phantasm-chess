@@ -93,4 +93,21 @@ export function useCommentaryAudio(
   }, [bgVol]);
 
   useEffect(() => stopAll, [stopAll]);
+
+  const fadeBgOut = useCallback((durationMs: number) => {
+    const audio = bgRef.current;
+    if (!audio) return;
+    const startVol = audio.volume;
+    const startTime = performance.now();
+    const tick = () => {
+      if (bgRef.current !== audio) return;
+      const t = Math.min((performance.now() - startTime) / durationMs, 1);
+      audio.volume = startVol * (1 - t);
+      if (t < 1) requestAnimationFrame(tick);
+      else { audio.pause(); bgRef.current = null; }
+    };
+    requestAnimationFrame(tick);
+  }, []);
+
+  return { fadeBgOut };
 }
