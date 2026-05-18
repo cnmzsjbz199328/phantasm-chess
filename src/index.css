@@ -145,7 +145,8 @@ canvas {
   display: flex; flex-direction: column;
   align-items: center;
   padding: 40px 24px 80px;
-  animation: creditsScroll 36s linear forwards;
+  will-change: transform;
+  animation: creditsScroll 36s linear 0.1s both;
 }
 .outro-title {
   color: #f5e6c8;

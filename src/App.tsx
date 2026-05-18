@@ -20,7 +20,7 @@ import { THEME_META_MAP } from "./data/matchMeta";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 
-type AppPhase = 'idle' | 'intro' | 'playing' | 'finishing' | 'epilogue' | 'outro';
+type AppPhase = 'idle' | 'intro' | 'playing' | 'waitingForAudio' | 'finishing' | 'epilogue' | 'outro';
 
 const SHOW_STATS = new URLSearchParams(window.location.search).has('stats');
 
@@ -179,12 +179,19 @@ export default function App() {
   const commentaryVol = COMMENTARY_LEVELS[commentaryLvlIdx];
   const bgVol = BG_LEVELS[bgLvlIdx];
   const handleCommentaryEnd = useCallback(() => {
-    setAppPhase(prev => prev === 'finishing' ? 'epilogue' : prev);
-  }, []);
+    if (appPhase === 'waitingForAudio') {
+      // Commentary outlasted the game — play the final move now, then go to epilogue
+      chess.nextStep();
+      setTimeout(() => setAppPhase(currentMeta ? 'epilogue' : 'idle'), 4500);
+    } else {
+      setAppPhase(prev => prev === 'finishing' ? 'epilogue' : prev);
+    }
+  }, [appPhase, chess, currentMeta]);
 
-  const { fadeBgOut } = useCommentaryAudio(
+  const { fadeBgOut, isCommentaryEndedRef } = useCommentaryAudio(
     theme.id,
-    appPhase === 'playing' || appPhase === 'finishing' || appPhase === 'epilogue' || appPhase === 'outro',
+    appPhase === 'playing' || appPhase === 'waitingForAudio' || appPhase === 'finishing' || appPhase === 'epilogue' || appPhase === 'outro',
+    // Only pause audio when the user manually pauses during playback, not when waiting at penultimate
     !isPlaying && appPhase === 'playing',
     currentMeta?.commentarySegments ?? 0,
     commentaryVol,
@@ -254,6 +261,16 @@ export default function App() {
       interval = setInterval(() => {
         if (isAnimating) return;
         if (chess.currentStep < chess.history.length - 1) {
+          // At the penultimate move and commentary is still running — hold here
+          if (
+            currentMeta &&
+            chess.currentStep === chess.history.length - 2 &&
+            !isCommentaryEndedRef.current
+          ) {
+            setIsPlaying(false);
+            setAppPhase('waitingForAudio');
+            return;
+          }
           chess.nextStep();
         } else {
           setIsPlaying(false);
@@ -262,6 +279,8 @@ export default function App() {
       }, 4500);
     }
     return () => clearInterval(interval);
+  // isCommentaryEndedRef is a stable ref object — intentionally omitted from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, isAnimating, chess, currentMeta]);
 
   const controlsLocked = isAnimating;
@@ -299,6 +318,7 @@ export default function App() {
 
   const playButtonDisabled =
     appPhase === 'intro' ||
+    appPhase === 'waitingForAudio' ||
     appPhase === 'finishing' ||
     appPhase === 'epilogue' ||
     appPhase === 'outro' ||
@@ -463,7 +483,7 @@ export default function App() {
 
         {/* 3D Scene */}
         <div className="flex-1 relative z-10">
-          <Canvas shadows dpr={[1, 2]}>
+          <Canvas shadows dpr={[1, 2]} frameloop={appPhase === 'outro' ? 'never' : 'always'}>
             {SHOW_STATS && <Stats />}
             <Suspense fallback={null}>
               <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />

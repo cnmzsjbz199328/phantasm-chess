@@ -20,6 +20,9 @@ export function useCommentaryAudio(
   bgVolRef.current = bgVol;
   onCommentaryEndRef.current = onCommentaryEnd;
 
+  // Tracks whether all commentary segments have finished — read by App.tsx interval
+  const isCommentaryEndedRef = useRef(false);
+
   const stopAll = useCallback(() => {
     if (commentaryRef.current) {
       commentaryRef.current.onended = null;
@@ -35,6 +38,7 @@ export function useCommentaryAudio(
 
   const playSegment = useCallback((index: number, total: number, theme: string) => {
     if (index >= total) {
+      isCommentaryEndedRef.current = true;
       onCommentaryEndRef.current?.();
       return;
     }
@@ -46,6 +50,7 @@ export function useCommentaryAudio(
   }, []);
 
   useEffect(() => {
+    isCommentaryEndedRef.current = false;
     if (!isGameActive) {
       stopAll();
       return;
@@ -58,7 +63,10 @@ export function useCommentaryAudio(
       const audio = new Audio(`/audio/${themeId}/commentary.mp3`);
       audio.volume = commentaryVolRef.current;
       commentaryRef.current = audio;
-      audio.onended = () => onCommentaryEndRef.current?.();
+      audio.onended = () => {
+        isCommentaryEndedRef.current = true;
+        onCommentaryEndRef.current?.();
+      };
       audio.play().catch(() => {});
     }
 
@@ -109,5 +117,5 @@ export function useCommentaryAudio(
     requestAnimationFrame(tick);
   }, []);
 
-  return { fadeBgOut };
+  return { fadeBgOut, isCommentaryEndedRef };
 }
