@@ -18,6 +18,8 @@ interface HumanoidPieceProps {
   };
 }
 
+const POLYGON_OFFSET = { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 } as const;
+
 export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
   function HumanoidPieceModel({ type, color, dissolveRef, locomotion }, ref) {
   const groupRef = useRef<THREE.Group>(null);
@@ -142,18 +144,18 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
   // ── body helpers — lowercase functions, not React components (avoids remount on re-render) ──
 
   const sideRef = (x: number, left: RefObject<THREE.Group | null>, right: RefObject<THREE.Group | null>) => x < 0 ? left : right;
-  const foot      = (x: number) => <group ref={sideRef(x, leftFootRef, rightFootRef)}><mesh position={[x, 0.06, 0.03]}><boxGeometry args={[0.14, 0.1, 0.22]} /><DM {...m(cv.dark)} /></mesh></group>;
+const foot      = (x: number) => <group ref={sideRef(x, leftFootRef, rightFootRef)}><mesh position={[x, 0.06, 0.03]}><boxGeometry args={[0.14, 0.1, 0.22]} /><DM {...m(cv.dark)} {...POLYGON_OFFSET} /></mesh></group>;
   const leg       = (x: number) => <group ref={sideRef(x, leftLegRef, rightLegRef)}><mesh position={[x, 0.29, 0]}><boxGeometry args={[0.14, 0.36, 0.14]} /><DM {...m(cv.sec)} /></mesh></group>;
-  const hips      = (w = 0.34)  => <mesh position={[0, 0.49, 0]}><boxGeometry args={[w, 0.12, 0.19]} /><DM {...m(cv.pri)} /></mesh>;
+  const hips      = (w = 0.34)  => <mesh position={[0, 0.49, 0]}><boxGeometry args={[w, 0.12, 0.19]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>;
   const torso     = (w = 0.38, h = 0.38) => <mesh position={[0, 0.71, 0]}><boxGeometry args={[w, h, 0.22]} /><DM {...m(cv.sec)} /></mesh>;
-  const pauldron  = (x: number) => <mesh position={[x, 0.85, 0]}><boxGeometry args={[0.14, 0.1, 0.2]} /><DM {...m(cv.pri)} /></mesh>;
+  const pauldron  = (x: number) => <mesh position={[x, 0.85, 0]}><boxGeometry args={[0.14, 0.1, 0.2]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>;
   const upperArm  = (x: number) => <group ref={sideRef(x, leftArmRef, rightArmRef)}><mesh position={[x, 0.67, 0]}><boxGeometry args={[0.13, 0.28, 0.13]} /><DM {...m(cv.sec)} /></mesh></group>;
   const forearm   = (x: number) => <mesh position={[x, 0.47, 0]}><boxGeometry args={[0.11, 0.22, 0.11]} /><DM {...m(cv.sec)} /></mesh>;
-  const hand      = (x: number) => <mesh position={[x, 0.34, 0.01]}><boxGeometry args={[0.1, 0.1, 0.13]} /><DM {...m(cv.acc)} /></mesh>;
+  const hand      = (x: number) => <mesh position={[x, 0.34, 0.01]}><boxGeometry args={[0.1, 0.1, 0.13]} /><DM {...m(cv.acc)} {...POLYGON_OFFSET} /></mesh>;
   const neck      = (y = 0.95)  => <mesh position={[0, y, 0]}><cylinderGeometry args={[0.065, 0.075, 0.1, 8]} /><DM {...m(cv.sec)} /></mesh>;
   const head      = (y = 1.11)  => <mesh position={[0, y, 0]}><boxGeometry args={[0.24, 0.24, 0.22]} /><DM {...m(cv.sec)} /></mesh>;
-  const royalBoot = (x: number) => <group ref={sideRef(x, leftFootRef, rightFootRef)}><mesh position={[x, 0.07, 0.08]}><boxGeometry args={[0.18, 0.12, 0.28]} /><DM {...m(cv.dark)} /></mesh></group>;
-  const royalGreave = (x: number) => <group ref={sideRef(x, leftLegRef, rightLegRef)}><mesh position={[x, 0.3, 0.09]}><boxGeometry args={[0.16, 0.36, 0.08]} /><DM {...m(cv.pri)} /></mesh></group>;
+  const royalBoot = (x: number) => <group ref={sideRef(x, leftFootRef, rightFootRef)}><mesh position={[x, 0.07, 0.08]}><boxGeometry args={[0.18, 0.12, 0.28]} /><DM {...m(cv.dark)} {...POLYGON_OFFSET} /></mesh></group>;
+  const royalGreave = (x: number) => <group ref={sideRef(x, leftLegRef, rightLegRef)}><mesh position={[x, 0.3, 0.09]}><boxGeometry args={[0.16, 0.36, 0.08]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh></group>;
 
   const fullBody = (torsoW = 0.38) => (
     <>
@@ -275,25 +277,25 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
 
     if (t === "r") return (
       <group>
-        <mesh position={[-0.12, 0.07, 0.03]}><boxGeometry args={[0.2, 0.12, 0.28]} /><DM {...m(cv.dark)} /></mesh>
-        <mesh position={[0.12, 0.07, 0.03]}><boxGeometry args={[0.2, 0.12, 0.28]} /><DM {...m(cv.dark)} /></mesh>
+        <mesh position={[-0.12, 0.07, 0.03]}><boxGeometry args={[0.2, 0.12, 0.28]} /><DM {...m(cv.dark)} {...POLYGON_OFFSET} /></mesh>
+        <mesh position={[0.12, 0.07, 0.03]}><boxGeometry args={[0.2, 0.12, 0.28]} /><DM {...m(cv.dark)} {...POLYGON_OFFSET} /></mesh>
         <mesh position={[-0.12, 0.31, 0]}><boxGeometry args={[0.2, 0.4, 0.2]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0.12, 0.31, 0]}><boxGeometry args={[0.2, 0.4, 0.2]} /><DM {...m(cv.sec)} /></mesh>
-        <mesh position={[0, 0.54, 0]}><boxGeometry args={[0.5, 0.14, 0.28]} /><DM {...m(cv.pri)} /></mesh>
+        <mesh position={[0, 0.54, 0]}><boxGeometry args={[0.5, 0.14, 0.28]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>
         <mesh position={[0, 0.79, 0]}><boxGeometry args={[0.52, 0.46, 0.3]} /><DM {...m(cv.sec)} /></mesh>
-        <mesh position={[0, 0.8, 0.16]}><boxGeometry args={[0.36, 0.28, 0.02]} /><DM {...m(cv.pri)} /></mesh>
-        <mesh position={[-0.32, 0.96, 0]}><boxGeometry args={[0.16, 0.12, 0.3]} /><DM {...m(cv.pri)} /></mesh>
-        <mesh position={[0.32, 0.96, 0]}><boxGeometry args={[0.16, 0.12, 0.3]} /><DM {...m(cv.pri)} /></mesh>
+        <mesh position={[0, 0.8, 0.16]}><boxGeometry args={[0.36, 0.28, 0.02]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>
+        <mesh position={[-0.32, 0.96, 0]}><boxGeometry args={[0.16, 0.12, 0.3]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>
+        <mesh position={[0.32, 0.96, 0]}><boxGeometry args={[0.16, 0.12, 0.3]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>
         <mesh position={[-0.38, 0.73, 0]}><boxGeometry args={[0.18, 0.38, 0.18]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0.38, 0.73, 0]}><boxGeometry args={[0.18, 0.38, 0.18]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[-0.38, 0.49, 0]}><boxGeometry args={[0.17, 0.26, 0.17]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0.38, 0.49, 0]}><boxGeometry args={[0.17, 0.26, 0.17]} /><DM {...m(cv.sec)} /></mesh>
-        <mesh position={[-0.38, 0.33, 0]}><boxGeometry args={[0.2, 0.16, 0.2]} /><DM {...m(cv.acc)} /></mesh>
-        <mesh position={[0.38, 0.33, 0]}><boxGeometry args={[0.2, 0.16, 0.2]} /><DM {...m(cv.acc)} /></mesh>
+        <mesh position={[-0.38, 0.33, 0]}><boxGeometry args={[0.2, 0.16, 0.2]} /><DM {...m(cv.acc)} {...POLYGON_OFFSET} /></mesh>
+        <mesh position={[0.38, 0.33, 0]}><boxGeometry args={[0.2, 0.16, 0.2]} /><DM {...m(cv.acc)} {...POLYGON_OFFSET} /></mesh>
         <mesh position={[0, 1.04, 0]}><cylinderGeometry args={[0.11, 0.13, 0.1, 8]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0, 1.19, 0]}><boxGeometry args={[0.32, 0.28, 0.28]} /><DM {...m(cv.sec)} /></mesh>
         {[-0.11, 0, 0.11].map((x, i) => (
-          <mesh key={i} position={[x, 1.37, 0]}><boxGeometry args={[0.07, 0.11, 0.28]} /><DM {...m(cv.pri)} /></mesh>
+          <mesh key={i} position={[x, 1.37, 0]}><boxGeometry args={[0.07, 0.11, 0.28]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>
         ))}
       </group>
     );
@@ -305,7 +307,7 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
           ([-0.26, 0.26] as number[]).map((z) => (
             <group key={`${x}_${z}`}>
               <mesh position={[x, 0.13, z]}><boxGeometry args={[0.12, 0.26, 0.12]} /><DM {...m(cv.sec)} /></mesh>
-              <mesh position={[x, 0.02, z + (z > 0 ? 0.04 : -0.04)]}><boxGeometry args={[0.12, 0.06, 0.2]} /><DM {...m(cv.dark)} /></mesh>
+              <mesh position={[x, 0.02, z + (z > 0 ? 0.04 : -0.04)]}><boxGeometry args={[0.12, 0.06, 0.2]} /><DM {...m(cv.dark)} {...POLYGON_OFFSET} /></mesh>
             </group>
           ))
         )}
@@ -314,14 +316,14 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
         <mesh position={[-0.07, 0.79, 0.48]}><boxGeometry args={[0.05, 0.1, 0.05]} /><DM {...m(cv.pri)} /></mesh>
         <mesh position={[0.07, 0.79, 0.48]}><boxGeometry args={[0.05, 0.1, 0.05]} /><DM {...m(cv.pri)} /></mesh>
         <mesh position={[0, 0.58, 0.7]}><boxGeometry args={[0.14, 0.12, 0.14]} /><DM {...m(cv.sec)} /></mesh>
-        <mesh position={[0, 0.49, -0.02]}><boxGeometry args={[0.36, 0.1, 0.32]} /><DM {...m(cv.acc)} /></mesh>
-        <mesh position={[0, 0.72, -0.04]}><boxGeometry args={[0.34, 0.34, 0.22]} /><DM {...m(cv.pri)} /></mesh>
+        <mesh position={[0, 0.49, -0.02]}><boxGeometry args={[0.36, 0.1, 0.32]} /><DM {...m(cv.acc)} {...POLYGON_OFFSET} /></mesh>
+        <mesh position={[0, 0.72, -0.04]}><boxGeometry args={[0.34, 0.34, 0.22]} /><DM {...m(cv.pri)} {...POLYGON_OFFSET} /></mesh>
         <mesh position={[-0.24, 0.7, -0.02]}><boxGeometry args={[0.12, 0.28, 0.12]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0.24, 0.7, -0.02]}><boxGeometry args={[0.12, 0.28, 0.12]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[-0.24, 0.5, -0.02]}><boxGeometry args={[0.11, 0.2, 0.11]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0.24, 0.5, -0.02]}><boxGeometry args={[0.11, 0.2, 0.11]} /><DM {...m(cv.sec)} /></mesh>
-        <mesh position={[-0.24, 0.38, 0]}><boxGeometry args={[0.1, 0.1, 0.12]} /><DM {...m(cv.acc)} /></mesh>
-        <mesh position={[0.24, 0.38, 0]}><boxGeometry args={[0.1, 0.1, 0.12]} /><DM {...m(cv.acc)} /></mesh>
+        <mesh position={[-0.24, 0.38, 0]}><boxGeometry args={[0.1, 0.1, 0.12]} /><DM {...m(cv.acc)} {...POLYGON_OFFSET} /></mesh>
+        <mesh position={[0.24, 0.38, 0]}><boxGeometry args={[0.1, 0.1, 0.12]} /><DM {...m(cv.acc)} {...POLYGON_OFFSET} /></mesh>
         <mesh position={[0, 0.96, -0.04]}><cylinderGeometry args={[0.065, 0.075, 0.1, 8]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0, 1.11, -0.04]}><boxGeometry args={[0.24, 0.24, 0.22]} /><DM {...m(cv.sec)} /></mesh>
         <mesh position={[0, 1.25, -0.04]}><boxGeometry args={[0.28, 0.07, 0.28]} /><DM {...m(cv.pri)} /></mesh>
