@@ -7,16 +7,6 @@ interface BoardTheme {
   frame: string;
 }
 
-interface SparkleConfig {
-  count: number;
-  scale: number;
-  size: number;
-  speed: number;
-  color: string;
-  opacity: number;
-  posY: number;
-}
-
 export interface WorldTheme {
   variant: "abyss" | "molten" | "frost" | "jade" | "arena";
   ground: string;          // far ground plane (100×100 bedrock)
@@ -46,10 +36,6 @@ export interface SceneTheme {
   spotIntensity: number;
   pointColor: string;
   pointIntensity: number;
-  starsCount: number;
-  starsSaturation: number;
-  starsSpeed: number;
-  sparkles: SparkleConfig[];
   bloomThreshold: number;
   bloomIntensity: number;
   bloomRadius: number;
@@ -78,13 +64,6 @@ export const THEMES: SceneTheme[] = [
     spotIntensity: 0.7,
     pointColor: "#800030",
     pointIntensity: 0.5,
-    starsCount: 2000,
-    starsSaturation: 0.12,
-    starsSpeed: 0.12,
-    sparkles: [
-      { count: 55, scale: 11, size: 0.7, speed: 0.1,  color: "#3a7aaa", opacity: 0.28, posY: 1.5 },
-      { count: 20, scale: 5,  size: 0.4, speed: 0.08, color: "#aa2a50", opacity: 0.22, posY: 0.5 },
-    ],
     bloomThreshold: 0.5,
     bloomIntensity: 0.45,
     bloomRadius: 0.3,
@@ -129,13 +108,6 @@ export const THEMES: SceneTheme[] = [
     spotIntensity: 0.9,
     pointColor: "#ff8040",
     pointIntensity: 0.6,
-    starsCount: 300,
-    starsSaturation: 0.5,
-    starsSpeed: 0.02,
-    sparkles: [
-      { count: 40, scale: 12, size: 0.6, speed: 0.05, color: "#ffcc66", opacity: 0.25, posY: 1.0 },
-      { count: 15, scale: 6,  size: 0.3, speed: 0.03, color: "#ff8844", opacity: 0.18, posY: 0.5 },
-    ],
     bloomThreshold: 0.6,
     bloomIntensity: 0.4,
     bloomRadius: 0.35,
@@ -180,13 +152,6 @@ export const THEMES: SceneTheme[] = [
     spotIntensity: 1.2,
     pointColor: "#660000",
     pointIntensity: 0.8,
-    starsCount: 80,
-    starsSaturation: 0.6,
-    starsSpeed: 0.03,
-    sparkles: [
-      { count: 65, scale: 10, size: 0.6,  speed: 0.32, color: "#ff6020", opacity: 0.42, posY: 0.8 },
-      { count: 28, scale: 5,  size: 0.35, speed: 0.22, color: "#ff9040", opacity: 0.32, posY: 0.3 },
-    ],
     bloomThreshold: 0.34,
     bloomIntensity: 0.72,
     bloomRadius: 0.42,
@@ -231,13 +196,6 @@ export const THEMES: SceneTheme[] = [
     spotIntensity: 0.8,
     pointColor: "#8090c0",
     pointIntensity: 0.55,
-    starsCount: 3500,
-    starsSaturation: 0.2,
-    starsSpeed: 0.06,
-    sparkles: [
-      { count: 80, scale: 12, size: 0.5,  speed: 0.06, color: "#c0e4ff", opacity: 0.28, posY: 1.5 },
-      { count: 30, scale: 6,  size: 0.3,  speed: 0.04, color: "#e0f0ff", opacity: 0.2,  posY: 0.8 },
-    ],
     bloomThreshold: 0.5,
     bloomIntensity: 0.34,
     bloomRadius: 0.28,
@@ -282,13 +240,6 @@ export const THEMES: SceneTheme[] = [
     spotIntensity: 0.88,
     pointColor: "#400070",
     pointIntensity: 0.72,
-    starsCount: 1000,
-    starsSaturation: 0.3,
-    starsSpeed: 0.08,
-    sparkles: [
-      { count: 50, scale: 10, size: 0.55, speed: 0.09, color: "#40e890", opacity: 0.28, posY: 1.4 },
-      { count: 22, scale: 5,  size: 0.35, speed: 0.07, color: "#c080ff", opacity: 0.22, posY: 0.7 },
-    ],
     bloomThreshold: 0.42,
     bloomIntensity: 0.5,
     bloomRadius: 0.32,

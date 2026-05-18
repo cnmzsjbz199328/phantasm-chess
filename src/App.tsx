@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, Stars, Sparkles, Stats } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Environment, Stats } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense } from "react";
@@ -486,33 +486,6 @@ export default function App() {
                 color={theme.spotColor}
               />
               <pointLight position={[-10, 10, -10]} intensity={theme.pointIntensity} color={theme.pointColor} />
-
-              {/* TEMP perf experiment: ambient Stars + Sparkles disabled to measure
-                  their FPS cost on iPhone. Either delete this whole block, or
-                  uncomment to restore, once the data is in. */}
-              {/*
-              <Stars
-                radius={90}
-                depth={60}
-                count={theme.starsCount}
-                factor={1.2}
-                saturation={theme.starsSaturation}
-                fade
-                speed={theme.starsSpeed}
-              />
-              {theme.sparkles.map((s, i) => (
-                <Sparkles
-                  key={i}
-                  count={s.count}
-                  scale={s.scale}
-                  size={s.size}
-                  speed={s.speed}
-                  color={s.color}
-                  opacity={s.opacity}
-                  position={[0, s.posY, 0]}
-                />
-              ))}
-              */}
 
               <WorldStage />
 
