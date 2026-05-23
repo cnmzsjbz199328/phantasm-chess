@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { SceneMeta } from '../types/SceneMeta';
+import { SandParticleCanvas } from './SandParticleCanvas';
 
 interface Props {
   meta: SceneMeta;
@@ -15,6 +16,9 @@ export function IntroOverlay({ meta, onFinish }: Props) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const introMusicRef = useRef<HTMLAudioElement | null>(null);
   const isFadingOutRef = useRef(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [sandRects, setSandRects] = useState<{ header: DOMRect | null; body: DOMRect | null } | null>(null);
 
   // Intro music: fade in on mount, fade out when exiting
   useEffect(() => {
@@ -88,15 +92,17 @@ export function IntroOverlay({ meta, onFinish }: Props) {
     const id = setTimeout(() => {
       if (isLastPage) setPhase('exiting');
       else setPageIndex(p => p + 1);
-    }, 600);
+    }, 1000);
     return () => clearTimeout(id);
   }, [phase, isLastPage]);
 
   useEffect(() => {
     if (phase !== 'exiting') return;
-    const id = setTimeout(onFinish, 1500);
-    return () => clearTimeout(id);
-  }, [phase, onFinish]);
+    setSandRects({
+      header: headerRef.current?.getBoundingClientRect() ?? null,
+      body: bodyRef.current?.getBoundingClientRect() ?? null,
+    });
+  }, [phase]);
 
   const skipAll = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -104,23 +110,33 @@ export function IntroOverlay({ meta, onFinish }: Props) {
   };
 
   return (
-    <div
-      className={`intro-overlay${phase === 'exiting' ? ' exiting' : ''}`}
-      onClick={skipAll}
-    >
-      <div className="intro-header">
-        <div className="intro-title">{meta.title}</div>
-        {meta.subtitle && <div className="intro-subtitle">{meta.subtitle}</div>}
-      </div>
-
+    <>
       <div
-        key={pageIndex}
-        className={`intro-body${(phase === 'dissolving' || phase === 'exiting') ? ' dissolving' : ''}`}
+        className={`intro-overlay${phase === 'exiting' ? ' exiting' : ''}`}
+        onClick={skipAll}
       >
-        {currentText.slice(0, charIndex)}
-        {phase === 'typing' && <span className="intro-cursor">▌</span>}
+        <div className="intro-header" ref={headerRef}>
+          <div className="intro-title">{meta.title}</div>
+          {meta.subtitle && <div className="intro-subtitle">{meta.subtitle}</div>}
+        </div>
+
+        <div
+          ref={bodyRef}
+          key={pageIndex}
+          className={`intro-body${(phase === 'dissolving' || phase === 'exiting') ? ' dissolving' : ''}`}
+        >
+          {currentText.slice(0, charIndex)}
+          {phase === 'typing' && <span className="intro-cursor">▌</span>}
+        </div>
       </div>
 
-    </div>
+      {sandRects && (
+        <SandParticleCanvas
+          headerRect={sandRects.header}
+          bodyRect={sandRects.body}
+          onComplete={onFinish}
+        />
+      )}
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Environment, Stats } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
@@ -20,9 +20,13 @@ import { THEME_META_MAP } from "./data/matchMeta";
 import { ThemeContext } from "./shared/ThemeContext";
 import { cn } from "./lib/utils";
 
-type AppPhase = 'idle' | 'intro' | 'playing' | 'waitingForAudio' | 'finishing' | 'epilogue' | 'outro';
+type AppPhase = 'idle' | 'countdown' | 'intro' | 'playing' | 'waitingForAudio' | 'finishing' | 'epilogue' | 'outro';
 
 const SHOW_STATS = new URLSearchParams(window.location.search).has('stats');
+const SHOW_CAMERA_DEBUG = new URLSearchParams(window.location.search).has('camera');
+
+interface CamKeyframe { t: number; azimuth: number; polar: number; distance: number; }
+interface CamData { azimuthDeg: number; polarDeg: number; distance: number; x: number; y: number; z: number; }
 
 // Keeps the AudioContext alive across the intro so iOS Safari doesn't revoke
 // the audio session before HTMLAudioElement.play() is called from a setTimeout.
@@ -42,49 +46,222 @@ function unlockAudioSession() {
   } catch { /* best-effort */ }
 }
 
-function CinematicCamera({ isPlaying, rotateSpeed }: { isPlaying: boolean; rotateSpeed: number }) {
-  const controlsRef = useRef<OrbitControlsImpl>(null);
+// ── Cinematic camera constants (values from recorded path data) ───────────────
+const CINEMATIC_POLAR       = 58.85 * (Math.PI / 180); // polar from recording
+const CINEMATIC_DIST        = 15;                       // "just right" distance
+const CINEMATIC_DIST_START  = 20;                       // opening wide shot
+const FAST_HALF_TURN_S      = 180 / 40;                 // 4.5 s at ~40°/s (recorded)
+const FAST_PAUSE_S          = 30;
+const SLOW_HALF_TURN_S      = 30;                       // 6°/s → 180° in 30 s
+const SLOW_PAUSE_S          = 30;
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!controlsRef.current) return;
-      const controls = controlsRef.current;
-      const rotateStep = 0.15;
-      const angleStep  = 0.08;
-      switch (e.key) {
-        case "ArrowLeft":
-          controls.setAzimuthalAngle(controls.getAzimuthalAngle() + rotateStep);
-          break;
-        case "ArrowRight":
-          controls.setAzimuthalAngle(controls.getAzimuthalAngle() - rotateStep);
-          break;
-        case "ArrowUp":
-          controls.setPolarAngle(Math.max(controls.minPolarAngle, controls.getPolarAngle() - angleStep));
-          break;
-        case "ArrowDown":
-          controls.setPolarAngle(Math.min(controls.maxPolarAngle, controls.getPolarAngle() + angleStep));
-          break;
-        default:
-          return;
-      }
-      controls.update();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+function CinematicCamera({
+  isPlaying, rotateSpeed,
+  isRecording, recordingRef, recordingStartRef, onCameraData,
+  appPhase,
+}: {
+  isPlaying: boolean;
+  rotateSpeed: number;
+  isRecording: boolean;
+  recordingRef: { current: CamKeyframe[] };
+  recordingStartRef: { current: number };
+  onCameraData: ((d: CamData) => void) | null;
+  appPhase: AppPhase;
+}) {
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+  const lastRecMs   = useRef(0);
+  const lastDispMs  = useRef(0);
+
+  // Proxy object that GSAP animates; useFrame reads it every tick
+  const camProxy  = useRef({ azimuth: 0, polar: CINEMATIC_POLAR, distance: CINEMATIC_DIST_START });
+  const cinematic = useRef(false);
+  const pullInRef = useRef<gsap.core.Tween | null>(null);
+  const cycleRef  = useRef<gsap.core.Timeline | null>(null);
+
+  // Tracks live camera distance for restoring after manual takeover
+  const currentDistRef    = useRef(CINEMATIC_DIST_START);
+  // Stable ref so setTimeout callbacks always see the latest value
+  const isCinematicActiveRef = useRef(false);
+  // runCycle stored in ref so the 30 s restore timer can call it
+  const runCycleRef       = useRef<(() => void) | null>(null);
+  const manualTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Active during normal gameplay phases only (not idle / intro / outro)
+  const isCinematicActive =
+    appPhase === 'playing' || appPhase === 'waitingForAudio' || appPhase === 'finishing';
+  isCinematicActiveRef.current = isCinematicActive;
+
+  // ── manual takeover: user grabbed camera during cinematic ─────────────────
+  const handleManualTakeover = useCallback(() => {
+    if (!isCinematicActiveRef.current) return;
+    cinematic.current = false;
+    pullInRef.current?.kill();
+    cycleRef.current?.kill();
+    pullInRef.current = cycleRef.current = null;
+
+    if (manualTimerRef.current) clearTimeout(manualTimerRef.current);
+    manualTimerRef.current = setTimeout(() => {
+      if (!isCinematicActiveRef.current || !controlsRef.current) return;
+      camProxy.current.azimuth  = controlsRef.current.getAzimuthalAngle();
+      camProxy.current.polar    = controlsRef.current.getPolarAngle();
+      camProxy.current.distance = currentDistRef.current;
+      cinematic.current = true;
+      runCycleRef.current?.();
+    }, 30_000);
   }, []);
+
+  // Attach OrbitControls 'start' event so mouse drag and scroll trigger takeover
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    controls.addEventListener('start', handleManualTakeover);
+    return () => controls.removeEventListener('start', handleManualTakeover);
+  }, [handleManualTakeover]);
+
+  // ── keyboard nudge — triggers manual takeover then hands off to OrbitControls
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!controlsRef.current) return;
+      const c = controlsRef.current;
+      const rs = 0.15, as = 0.08;
+      switch (e.key) {
+        case "ArrowLeft":  c.setAzimuthalAngle(c.getAzimuthalAngle() + rs); break;
+        case "ArrowRight": c.setAzimuthalAngle(c.getAzimuthalAngle() - rs); break;
+        case "ArrowUp":    c.setPolarAngle(Math.max(c.minPolarAngle, c.getPolarAngle() - as)); break;
+        case "ArrowDown":  c.setPolarAngle(Math.min(c.maxPolarAngle, c.getPolarAngle() + as)); break;
+        default: return;
+      }
+      c.update();
+      handleManualTakeover();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleManualTakeover]);
+
+  // ── cinematic choreography ────────────────────────────────────────────────
+  useEffect(() => {
+    const stop = () => {
+      cinematic.current = false;
+      pullInRef.current?.kill();
+      cycleRef.current?.kill();
+      pullInRef.current = cycleRef.current = null;
+      if (manualTimerRef.current) { clearTimeout(manualTimerRef.current); manualTimerRef.current = null; }
+    };
+
+    if (!isCinematicActive) { stop(); return; }
+    if (!controlsRef.current) return;
+
+    cinematic.current = true;
+    camProxy.current.azimuth  = controlsRef.current.getAzimuthalAngle();
+    camProxy.current.polar    = controlsRef.current.getPolarAngle();
+    camProxy.current.distance = CINEMATIC_DIST_START;
+
+    function runCycle() {
+      if (!cinematic.current) return;
+      const base = camProxy.current.azimuth;
+      const tl = gsap.timeline({ onComplete: runCycle });
+      cycleRef.current = tl;
+      tl
+        .to(camProxy.current, { azimuth: base + Math.PI, duration: FAST_HALF_TURN_S, ease: 'power2.inOut' })
+        .to({}, { duration: FAST_PAUSE_S })
+        .to(camProxy.current, { azimuth: base + 2 * Math.PI, duration: SLOW_HALF_TURN_S, ease: 'none' })
+        .to({}, { duration: SLOW_PAUSE_S });
+    }
+    runCycleRef.current = runCycle;
+
+    pullInRef.current = gsap.to(camProxy.current, {
+      distance: CINEMATIC_DIST,
+      polar:    CINEMATIC_POLAR,
+      duration: 8,
+      ease: 'power2.inOut',
+      onComplete: runCycle,
+    });
+
+    return stop;
+  }, [isCinematicActive]);
+
+  // ── per-frame update — priority 1 runs after OrbitControls ───────────────
+  useFrame(({ clock, camera }) => {
+    if (!controlsRef.current) return;
+    const controls = controlsRef.current;
+    const nowMs = clock.getElapsedTime() * 1000;
+
+    const az   = cinematic.current ? camProxy.current.azimuth   : controls.getAzimuthalAngle();
+    const pol  = cinematic.current ? camProxy.current.polar      : controls.getPolarAngle();
+    const dist = cinematic.current ? camProxy.current.distance   : camera.position.distanceTo(controls.target);
+
+    currentDistRef.current = dist;
+
+    if (cinematic.current) {
+      camera.position.set(
+        dist * Math.sin(pol) * Math.sin(az),
+        dist * Math.cos(pol),
+        dist * Math.sin(pol) * Math.cos(az),
+      );
+      camera.lookAt(controls.target);
+      camera.updateMatrixWorld();
+    }
+
+    // Record at 10 fps
+    if (isRecording && nowMs - lastRecMs.current >= 100) {
+      lastRecMs.current = nowMs;
+      recordingRef.current.push({ t: performance.now() - recordingStartRef.current, azimuth: az, polar: pol, distance: dist });
+    }
+
+    // Debug display at 5 fps
+    if (onCameraData && nowMs - lastDispMs.current >= 200) {
+      lastDispMs.current = nowMs;
+      onCameraData({ azimuthDeg: az * (180 / Math.PI), polarDeg: pol * (180 / Math.PI), distance: dist,
+        x: camera.position.x, y: camera.position.y, z: camera.position.z });
+    }
+  }, 1);
 
   return (
     <OrbitControls
       ref={controlsRef}
+      enabled={true}
       enablePan={false}
       enableDamping
       dampingFactor={0.1}
       maxPolarAngle={Math.PI / 2.1}
       minDistance={5}
-      maxDistance={15}
-      autoRotate={!isPlaying}
+      maxDistance={20}
+      autoRotate={!isPlaying && !isCinematicActive}
       autoRotateSpeed={rotateSpeed}
     />
+  );
+}
+
+function CountdownOverlay() {
+  const [count, setCount] = useState(3);
+  const spanRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setCount(2), 1000),
+      setTimeout(() => setCount(1), 2000),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  useEffect(() => {
+    if (!spanRef.current) return;
+    gsap.fromTo(spanRef.current,
+      { scale: 1.5, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(1.4)' },
+    );
+  }, [count]);
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <span
+        ref={spanRef}
+        className="text-[20vmin] font-black tabular-nums select-none text-white"
+        style={{ textShadow: '0 0 80px rgba(255,255,255,0.5), 0 0 160px rgba(255,255,255,0.2)' }}
+      >
+        {count}
+      </span>
+    </div>
   );
 }
 
@@ -109,7 +286,7 @@ function ChessTitle({ appPhase, currentStep, totalSteps }: {
   }, []);
 
   useEffect(() => {
-    const wantCounter = appPhase !== 'idle';
+    const wantCounter = appPhase !== 'idle' && appPhase !== 'countdown';
     if (wantCounter && faceRef.current === 'chess') {
       faceRef.current = 'counter';
       gsap.killTweensOf([frontRef.current, backRef.current]);
@@ -172,6 +349,11 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const headerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Camera debug state (only meaningful when ?camera=1)
+  const [cameraData, setCameraData] = useState<CamData | null>(null);
+  const [isCameraRecording, setIsCameraRecording] = useState(false);
+  const cameraRecordingRef = useRef<CamKeyframe[]>([]);
+  const recordingStartRef = useRef(0);
   const theme = THEMES[themeIdx];
   const matchData = THEME_MATCH_MAP[theme.id];
   const chess = useChessEngine(matchData);
@@ -255,6 +437,41 @@ export default function App() {
     setAppPhase('idle');
   }, [themeIdx]);
 
+  // Countdown: 3 s delay before intro/play starts (useful for screen recording)
+  useEffect(() => {
+    if (appPhase !== 'countdown') return;
+    const timer = setTimeout(() => {
+      if (currentMeta) {
+        setAppPhase('intro');
+      } else {
+        setAppPhase('playing');
+        setIsPlaying(true);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [appPhase, currentMeta]);
+
+  // Camera recording handlers
+  const handleStartRecording = useCallback(() => {
+    cameraRecordingRef.current = [];
+    recordingStartRef.current = performance.now();
+    setIsCameraRecording(true);
+  }, []);
+  const handleStopRecording = useCallback(() => setIsCameraRecording(false), []);
+  const handleDownloadRecording = useCallback(() => {
+    const payload = JSON.stringify({
+      recordedAt: new Date().toISOString(),
+      note: 'azimuth/polar in radians; t in ms from recording start',
+      samples: cameraRecordingRef.current,
+    }, null, 2);
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([payload], { type: 'application/json' })),
+      download: `camera-path-${Date.now()}.json`,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, []);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
@@ -294,13 +511,8 @@ export default function App() {
     if (appPhase === 'idle') {
       unlockAudioSession();
       chess.goToStep(0);
-      if (currentMeta) {
-        preWarmAudio();
-        setAppPhase('intro');
-      } else {
-        setAppPhase('playing');
-        setIsPlaying(true);
-      }
+      if (currentMeta) preWarmAudio();
+      setAppPhase('countdown');
     } else if (appPhase === 'playing') {
       if (isPlaying || !controlsLocked) setIsPlaying(!isPlaying);
     }
@@ -318,6 +530,7 @@ export default function App() {
   };
 
   const playButtonDisabled =
+    appPhase === 'countdown' ||
     appPhase === 'intro' ||
     appPhase === 'waitingForAudio' ||
     appPhase === 'finishing' ||
@@ -487,11 +700,16 @@ export default function App() {
           <Canvas shadows dpr={[1, 2]} frameloop={appPhase === 'outro' ? 'never' : 'always'}>
             {SHOW_STATS && <Stats />}
             <Suspense fallback={null}>
-              <PerspectiveCamera makeDefault position={[0, 8, 10]} fov={40} />
+              <PerspectiveCamera makeDefault position={[0, 10.4, 17.1]} fov={40} />
               
               <CinematicCamera
                 isPlaying={isPlaying}
                 rotateSpeed={appPhase === 'epilogue' || appPhase === 'outro' ? 0.2 : 0.5}
+                isRecording={isCameraRecording}
+                recordingRef={cameraRecordingRef}
+                recordingStartRef={recordingStartRef}
+                onCameraData={SHOW_CAMERA_DEBUG ? setCameraData : null}
+                appPhase={appPhase}
               />
 
               <color attach="background" args={[theme.background]} />
@@ -543,11 +761,58 @@ export default function App() {
           />
         </div>
 
+        {appPhase === 'countdown' && <CountdownOverlay />}
+
         {appPhase === 'intro' && currentMeta && (
           <IntroOverlay meta={currentMeta} onFinish={handleIntroFinish} />
         )}
         {appPhase === 'outro' && currentMeta && (
           <OutroOverlay meta={currentMeta} onClose={handleOutroClose} />
+        )}
+
+        {/* Camera debug panel — enabled via ?camera=1 */}
+        {SHOW_CAMERA_DEBUG && cameraData && (
+          <div className="absolute top-16 right-3 sm:right-8 z-30 min-w-52 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md p-3 text-[11px] font-mono text-white/80 space-y-1">
+            <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1.5">Camera Debug</div>
+            <div className="flex gap-3">
+              <span>Az <span className="text-cyan-300">{cameraData.azimuthDeg.toFixed(1)}°</span></span>
+              <span>Pol <span className="text-cyan-300">{cameraData.polarDeg.toFixed(1)}°</span></span>
+              <span>D <span className="text-cyan-300">{cameraData.distance.toFixed(2)}</span></span>
+            </div>
+            <div className="text-white/50">
+              ({cameraData.x.toFixed(2)},&nbsp;{cameraData.y.toFixed(2)},&nbsp;{cameraData.z.toFixed(2)})
+            </div>
+            <div className="flex items-center gap-2 pt-1 border-t border-white/10">
+              {!isCameraRecording ? (
+                <button
+                  onClick={handleStartRecording}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 text-red-300 transition-all"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse inline-block" />
+                  REC
+                </button>
+              ) : (
+                <button
+                  onClick={handleStopRecording}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/40 border border-red-500/50 text-red-200 transition-all"
+                >
+                  <span className="w-1.5 h-1.5 rounded-sm bg-red-300 inline-block" />
+                  STOP&nbsp;
+                  <span className="tabular-nums text-red-300">{cameraRecordingRef.current.length}</span>
+                </button>
+              )}
+              <button
+                onClick={handleDownloadRecording}
+                disabled={cameraRecordingRef.current.length === 0}
+                className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/15 border border-white/10 transition-all disabled:opacity-30"
+              >
+                ↓ JSON
+              </button>
+              {cameraRecordingRef.current.length > 0 && !isCameraRecording && (
+                <span className="text-white/40 tabular-nums">{cameraRecordingRef.current.length} pts</span>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Ambient glow */}
