@@ -188,7 +188,7 @@ export default function App() {
     }
   }, [appPhase, chess, currentMeta]);
 
-  const { fadeBgOut, isCommentaryEndedRef } = useCommentaryAudio(
+  const { fadeBgOut, isCommentaryEndedRef, preWarmAudio } = useCommentaryAudio(
     theme.id,
     appPhase === 'playing' || appPhase === 'waitingForAudio' || appPhase === 'finishing' || appPhase === 'epilogue' || appPhase === 'outro',
     // Only pause audio when the user manually pauses during playback, not when waiting at penultimate
@@ -295,6 +295,7 @@ export default function App() {
       unlockAudioSession();
       chess.goToStep(0);
       if (currentMeta) {
+        preWarmAudio();
         setAppPhase('intro');
       } else {
         setAppPhase('playing');
