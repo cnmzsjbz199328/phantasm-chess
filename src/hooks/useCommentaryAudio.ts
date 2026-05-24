@@ -12,6 +12,9 @@ const gainNodeMap = new WeakMap<HTMLAudioElement, GainNode>();
 const _hmr = (import.meta as unknown as { hot?: { dispose: (fn: () => void) => void } }).hot;
 if (_hmr) _hmr.dispose(() => { globalAudioCtx?.close(); globalAudioCtx = null; });
 
+/** BGM volume multiplier applied while commentary is audible (0–1). */
+const COMMENTARY_DUCK = 0.28;
+
 /** Returns (creating if needed) the singleton AudioContext. */
 function getAudioCtx(): AudioContext | null {
   const Ctx =
@@ -23,7 +26,8 @@ function getAudioCtx(): AudioContext | null {
 }
 
 // IMPORTANT: createMediaElementSource may only be called once per element — WeakMap enforces this.
-function setAudioVolume(audio: HTMLAudioElement, volume: number) {
+// rampMs > 0 smoothly transitions the GainNode instead of snapping (duck/unduck).
+function setAudioVolume(audio: HTMLAudioElement, volume: number, rampMs = 0) {
   try { audio.volume = volume; } catch { /* read-only on iOS */ }
 
   const ctx = getAudioCtx();
@@ -40,7 +44,11 @@ function setAudioVolume(audio: HTMLAudioElement, volume: number) {
       gainNode.connect(ctx.destination);
       gainNodeMap.set(audio, gainNode);
     }
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+    if (rampMs > 0) {
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + rampMs / 1000);
+    } else {
+      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+    }
   } catch (e) {
     console.warn('Web Audio API volume control failed:', e);
   }
@@ -70,15 +78,17 @@ export function useCommentaryAudio(
   const preWarmBgRef     = useRef<HTMLAudioElement | null>(null);
 
   // Refs so callbacks always read the *latest* value without being re-created
-  const commentaryVolRef  = useRef(commentaryVol);
-  const bgVolRef          = useRef(bgVol);
-  const onCommentaryEndRef = useRef(onCommentaryEnd);
-  const isPausedRef       = useRef(isPaused);
+  const commentaryVolRef      = useRef(commentaryVol);
+  const bgVolRef              = useRef(bgVol);
+  const onCommentaryEndRef    = useRef(onCommentaryEnd);
+  const isPausedRef           = useRef(isPaused);
+  const isCommentaryActiveRef = useRef(isCommentaryActive);
 
-  commentaryVolRef.current  = commentaryVol;
-  bgVolRef.current          = bgVol;
-  onCommentaryEndRef.current = onCommentaryEnd;
-  isPausedRef.current       = isPaused;
+  commentaryVolRef.current      = commentaryVol;
+  bgVolRef.current              = bgVol;
+  onCommentaryEndRef.current    = onCommentaryEnd;
+  isPausedRef.current           = isPaused;
+  isCommentaryActiveRef.current = isCommentaryActive;
 
   // Tracks whether all commentary segments have finished — read by App.tsx interval
   const isCommentaryEndedRef = useRef(false);
@@ -151,15 +161,17 @@ export function useCommentaryAudio(
     preWarmComRef.current = com;
 
     // 3. Start background music immediately at the correct volume.
-    //    setAudioVolume is called HERE (inside the user gesture) so the
-    //    AudioContext is guaranteed to be running when the GainNode is wired up.
-    //    gainNodeMap prevents any second createMediaElementSource call if the
-    //    BGM effect later calls setAudioVolume on the same element again.
-    //    We intentionally do NOT pause after play() — the BGM should keep
+    //    AudioContext was already created and resumed above (within the user
+    //    gesture), so when the BGM effect calls setAudioVolume later the
+    //    context will be in 'running' state and the GainNode will be audible.
+    //    We do NOT call setAudioVolume here: calling createMediaElementSource
+    //    on iOS while another unlocked element (com) is mid-play can cause
+    //    that element to unexpectedly start outputting audio at full volume.
+    //    We also intentionally do NOT pause after play() — the BGM should keep
     //    playing through the countdown and intro phases without interruption.
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    setAudioVolume(bg, bgVolRef.current);
+    try { bg.volume = bgVolRef.current; } catch { /* read-only on iOS — GainNode will control it */ }
     bg.play().catch(() => {});
     preWarmBgRef.current = bg;
   }, [themeId, segments]);
@@ -260,8 +272,20 @@ export function useCommentaryAudio(
   }, [commentaryVol]);
 
   useEffect(() => {
-    if (bgRef.current) setAudioVolume(bgRef.current, bgVol);
+    if (bgRef.current) {
+      // Respect the duck state when user adjusts the slider mid-playback.
+      const effective = bgVol * (isCommentaryActiveRef.current ? COMMENTARY_DUCK : 1);
+      setAudioVolume(bgRef.current, effective);
+    }
   }, [bgVol]);
+
+  // ── BGM ducking — lower under commentary, restore after ──────────────────
+  // Uses a 600 ms ramp so the transition isn't jarring.
+  useEffect(() => {
+    if (!bgRef.current) return;
+    const target = bgVolRef.current * (isCommentaryActive ? COMMENTARY_DUCK : 1);
+    setAudioVolume(bgRef.current, target, 600);
+  }, [isCommentaryActive]);
 
   // Stop everything on unmount
   useEffect(() => stopAll, [stopAll]);

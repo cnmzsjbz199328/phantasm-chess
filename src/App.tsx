@@ -361,7 +361,7 @@ export default function App() {
   const [themeIdx, setThemeIdx] = useState(0);
   const [appPhase, setAppPhase] = useState<AppPhase>('idle');
   const [commentaryLvlIdx, setCommentaryLvlIdx] = useState(3);
-  const [bgLvlIdx, setBgLvlIdx] = useState(2);
+  const [bgLvlIdx, setBgLvlIdx] = useState(3);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const headerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
