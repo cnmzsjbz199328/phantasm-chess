@@ -7,59 +7,14 @@ interface Props {
   onFinish: () => void;
 }
 
-const INTRO_MUSIC_VOL = 0.7;
-
 export function IntroOverlay({ meta, onFinish }: Props) {
   const [pageIndex, setPageIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [phase, setPhase] = useState<'typing' | 'done' | 'dissolving' | 'exiting'>('typing');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const introMusicRef = useRef<HTMLAudioElement | null>(null);
-  const isFadingOutRef = useRef(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [sandRects, setSandRects] = useState<{ header: DOMRect | null; body: DOMRect | null } | null>(null);
-
-  // Intro music: fade in on mount, fade out when exiting
-  useEffect(() => {
-    const audio = new Audio('/audio/Intro.mp3');
-    audio.loop = true;
-    audio.volume = 0;
-    audio.play().catch(() => {});
-    introMusicRef.current = audio;
-    isFadingOutRef.current = false;
-
-    const fadeDuration = 1500;
-    const startTime = performance.now();
-    const fadeIn = () => {
-      if (isFadingOutRef.current || introMusicRef.current !== audio) return;
-      const t = Math.min((performance.now() - startTime) / fadeDuration, 1);
-      audio.volume = INTRO_MUSIC_VOL * t;
-      if (t < 1) requestAnimationFrame(fadeIn);
-    };
-    requestAnimationFrame(fadeIn);
-
-    return () => { audio.pause(); introMusicRef.current = null; };
-  }, []);
-
-  useEffect(() => {
-    if (phase !== 'exiting') return;
-    const audio = introMusicRef.current;
-    if (!audio) return;
-    isFadingOutRef.current = true;
-    const startVol = audio.volume;
-    const fadeDuration = 1400;
-    const startTime = performance.now();
-    let frameId: number;
-    const fadeOut = () => {
-      const t = Math.min((performance.now() - startTime) / fadeDuration, 1);
-      audio.volume = startVol * (1 - t);
-      if (t < 1) frameId = requestAnimationFrame(fadeOut);
-      else { audio.pause(); introMusicRef.current = null; }
-    };
-    frameId = requestAnimationFrame(fadeOut);
-    return () => cancelAnimationFrame(frameId);
-  }, [phase]);
 
   const pages = meta.description;
   const currentText = pages[pageIndex] ?? '';

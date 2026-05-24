@@ -138,6 +138,22 @@ function CinematicCamera({
     return () => window.removeEventListener("keydown", onKey);
   }, [handleManualTakeover]);
 
+  // Attach robust direct touch/pointer event listeners to release camera lock on Safari / touch devices
+  useEffect(() => {
+    const handleDown = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.tagName === 'CANVAS') {
+        handleManualTakeover();
+      }
+    };
+    window.addEventListener('pointerdown', handleDown, { passive: true });
+    window.addEventListener('touchstart', handleDown, { passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', handleDown);
+      window.removeEventListener('touchstart', handleDown);
+    };
+  }, [handleManualTakeover]);
+
   // ── cinematic choreography ────────────────────────────────────────────────
   useEffect(() => {
     const stop = () => {
@@ -349,6 +365,7 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const headerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const outroTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Camera debug state (only meaningful when ?camera=1)
   const [cameraData, setCameraData] = useState<CamData | null>(null);
   const [isCameraRecording, setIsCameraRecording] = useState(false);
@@ -372,6 +389,7 @@ export default function App() {
 
   const { fadeBgOut, isCommentaryEndedRef, preWarmAudio } = useCommentaryAudio(
     theme.id,
+    appPhase !== 'idle',
     appPhase === 'playing' || appPhase === 'waitingForAudio' || appPhase === 'finishing' || appPhase === 'epilogue' || appPhase === 'outro',
     // Only pause audio when the user manually pauses during playback, not when waiting at penultimate
     !isPlaying && appPhase === 'playing',
@@ -388,13 +406,12 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [appPhase]);
 
-  // Epilogue: fade BGM over 8 s (5 s here + 3 s into outro), then enter outro
+  // Epilogue: hold for 5 s then enter outro — BGM fades only when user dismisses the outro screen.
   useEffect(() => {
     if (appPhase !== 'epilogue') return;
-    fadeBgOut(8000);
     const timer = setTimeout(() => setAppPhase('outro'), 5000);
     return () => clearTimeout(timer);
-  }, [appPhase, fadeBgOut]);
+  }, [appPhase]);
 
   useEffect(() => {
     const onFsChange = () => {
@@ -511,7 +528,7 @@ export default function App() {
     if (appPhase === 'idle') {
       unlockAudioSession();
       chess.goToStep(0);
-      if (currentMeta) preWarmAudio();
+      preWarmAudio();
       setAppPhase('countdown');
     } else if (appPhase === 'playing') {
       if (isPlaying || !controlsLocked) setIsPlaying(!isPlaying);
@@ -522,9 +539,15 @@ export default function App() {
     setIsPlaying(true);
   }, []);
   const handleOutroClose = useCallback(() => {
-    setAppPhase('idle');
-    chess.goToStep(0);
-  }, [chess]);
+    // Delay idle reset to match the fade — setting idle immediately would kill
+    // the BGM effect (isAudioActive = false) before the fade completes.
+    fadeBgOut(2000);
+    if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
+    outroTimerRef.current = setTimeout(() => {
+      setAppPhase('idle');
+      chess.goToStep(0);
+    }, 2000);
+  }, [chess, fadeBgOut]);
   const handleSkip = (step: number) => {
     if (!controlsLocked) chess.goToStep(step);
   };
