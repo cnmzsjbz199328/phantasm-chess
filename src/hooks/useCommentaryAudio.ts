@@ -153,27 +153,49 @@ export function useCommentaryAudio(
         : `/audio/${themeId}/commentary.mp3`;
     const com = new Audio(segFile);
     com.volume = 0;
-    com.play()
-      .then(() => {
-        if (preWarmComRef.current === com) { com.pause(); com.currentTime = 0; }
-      })
-      .catch(() => {});
+    // NOTE: The .then() / pause is now handled below in step 3 so both
+    // operations share a single promise chain — avoids double-pause on iOS.
     preWarmComRef.current = com;
 
-    // 3. Start background music immediately at the correct volume.
-    //    AudioContext was already created and resumed above (within the user
-    //    gesture), so when the BGM effect calls setAudioVolume later the
-    //    context will be in 'running' state and the GainNode will be audible.
-    //    We do NOT call setAudioVolume here: calling createMediaElementSource
-    //    on iOS while another unlocked element (com) is mid-play can cause
-    //    that element to unexpectedly start outputting audio at full volume.
-    //    We also intentionally do NOT pause after play() — the BGM should keep
-    //    playing through the countdown and intro phases without interruption.
+    // 3. Start background music at the correct volume.
+    //    iOS Safari will block a concurrent createMediaElementSource call if
+    //    `com` is still in its play → pause transition (the .play() promise
+    //    hasn't resolved yet).  We therefore create and start the BGM element
+    //    immediately so it is "unlocked", but defer wiring it into the Web
+    //    Audio graph (GainNode) until after `com` has been paused.
+    //
+    //    The gain starts at 0 and ramps to the target value in 80 ms so that
+    //    we avoid a full-volume flash on iOS where .volume is read-only.
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    try { bg.volume = bgVolRef.current; } catch { /* read-only on iOS — GainNode will control it */ }
+    // Start playing first (user-gesture context) — volume controlled by GainNode
     bg.play().catch(() => {});
     preWarmBgRef.current = bg;
+
+    // Wire GainNode after com is paused so iOS doesn't see two concurrent
+    // createMediaElementSource calls on different elements.
+    Promise.resolve(com.play().catch(() => {})).then(() => {
+      if (preWarmComRef.current === com) { com.pause(); com.currentTime = 0; }
+      // Now it is safe to create the BGM GainNode
+      const gainCtx = getAudioCtx();
+      if (gainCtx && preWarmBgRef.current === bg) {
+        // Snap gain to 0 first, then ramp up — prevents iOS full-volume flash
+        try {
+          let gainNode = gainNodeMap.get(bg);
+          if (!gainNode) {
+            gainNode = gainCtx.createGain();
+            const src = gainCtx.createMediaElementSource(bg);
+            src.connect(gainNode);
+            gainNode.connect(gainCtx.destination);
+            gainNodeMap.set(bg, gainNode);
+          }
+          gainNode.gain.setValueAtTime(0, gainCtx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(bgVolRef.current, gainCtx.currentTime + 0.08);
+        } catch (e) {
+          console.warn('BGM GainNode setup failed:', e);
+        }
+      }
+    }).catch(() => {});
   }, [themeId, segments]);
 
   // ── Background music management ───────────────────────────────────────────
