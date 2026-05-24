@@ -164,35 +164,40 @@ export function useGameOrchestrator({
   }, [appPhase, currentMeta]);
 
   // ── Auto-play interval ───────────────────────────────────────────────────
-  // isCommentaryEndedRef is stable — intentionally omitted from deps.
+  // chess/currentMeta are read through their stable refs so that unrelated
+  // re-renders (e.g. volume slider, camera debug at 5 fps) don't reset the
+  // 4500 ms timer. Only genuine playback-state changes restart the interval.
+  // isCommentaryEndedRef is a stable ref — both are intentionally omitted.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
       interval = setInterval(() => {
         if (isAnimating) return;
-        if (chess.currentStep < chess.history.length - 1) {
+        const c = chessRef.current;
+        const meta = currentMetaRef.current;
+        if (c.currentStep < c.history.length - 1) {
           // At the penultimate move and commentary is still running — hold here
           if (
-            currentMeta &&
-            chess.currentStep === chess.history.length - 2 &&
+            meta &&
+            c.currentStep === c.history.length - 2 &&
             !isCommentaryEndedRef.current
           ) {
             setIsPlaying(false);
             setAppPhase('waitingForAudio');
             return;
           }
-          chess.nextStep();
+          c.nextStep();
         } else {
           setIsPlaying(false);
-          setAppPhase(currentMeta ? 'finishing' : 'idle');
+          setAppPhase(meta ? 'finishing' : 'idle');
         }
       }, 4500);
     }
     return () => clearInterval(interval);
-  // isCommentaryEndedRef is a stable ref object — intentionally omitted from deps
+  // chess/currentMeta/isCommentaryEndedRef accessed through stable refs — omitted intentionally
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, isAnimating, chess, currentMeta]);
+  }, [isPlaying, isAnimating]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const controlsLocked = isAnimating;
