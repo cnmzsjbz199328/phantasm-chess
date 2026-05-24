@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCommentaryAudio } from './useCommentaryAudio';
-import type { AppPhase } from '../types/AppPhase';
+import type { AppPhase } from '../shared/AppPhase';
 import type { useChessEngine } from './useChessEngine';
-import type { SceneMeta } from '../types/SceneMeta';
+import type { SceneMeta } from '../shared/SceneMeta';
 
 // ---------------------------------------------------------------------------
 // iOS Audio Session unlock

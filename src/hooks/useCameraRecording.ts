@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import type { CamKeyframe } from '../types/AppPhase';
+import type { CamKeyframe } from '../shared/AppPhase';
 
 /**
  * Developer tool: records camera path keyframes that can be downloaded as JSON

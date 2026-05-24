@@ -30,8 +30,7 @@ export function CountdownOverlay() {
     <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
       <span
         ref={spanRef}
-        className="text-[20vmin] font-black tabular-nums select-none text-white"
-        style={{ textShadow: '0 0 80px rgba(255,255,255,0.5), 0 0 160px rgba(255,255,255,0.2)' }}
+        className="text-[20vmin] font-black tabular-nums select-none text-white countdown-glow"
       >
         {count}
       </span>

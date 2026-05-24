@@ -9,7 +9,7 @@ import { WorldStage } from './3d/WorldStage';
 import { CinematicCamera } from './3d/CinematicCamera';
 import { UIOverlay } from './UIOverlay';
 import { ThemeContext } from '../shared/ThemeContext';
-import type { AppPhase, CamKeyframe, CamData } from '../types/AppPhase';
+import type { AppPhase, CamKeyframe, CamData } from '../shared/AppPhase';
 import type { useChessEngine } from '../hooks/useChessEngine';
 
 const SHOW_STATS = new URLSearchParams(window.location.search).has('stats');

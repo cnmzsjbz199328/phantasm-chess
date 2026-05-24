@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { SceneMeta } from '../types/SceneMeta';
+import type { SceneMeta } from '../shared/SceneMeta';
 
 interface Props {
   meta: SceneMeta;

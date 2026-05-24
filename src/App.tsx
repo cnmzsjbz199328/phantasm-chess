@@ -14,7 +14,7 @@ import { CountdownOverlay } from './components/CountdownOverlay';
 import { IntroOverlay } from './components/IntroOverlay';
 import { OutroOverlay } from './components/OutroOverlay';
 import { CameraDebugPanel } from './components/CameraDebugPanel';
-import type { CamData } from './types/AppPhase';
+import type { CamData } from './shared/AppPhase';
 
 const SHOW_CAMERA_DEBUG = new URLSearchParams(window.location.search).has('camera');
 

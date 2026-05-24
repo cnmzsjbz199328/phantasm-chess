@@ -1,4 +1,4 @@
-import type { CamData } from '../types/AppPhase';
+import type { CamData } from '../shared/AppPhase';
 
 interface CameraDebugPanelProps {
   cameraData: CamData;

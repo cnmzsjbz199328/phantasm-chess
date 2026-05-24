@@ -1,4 +1,4 @@
-import type { SceneMeta } from '../types/SceneMeta';
+import type { SceneMeta } from '../shared/SceneMeta';
 
 export const THEME_META_MAP: Record<string, SceneMeta> = {
   abyss: {

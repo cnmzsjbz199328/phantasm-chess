@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import type { AppPhase, CamKeyframe, CamData } from '../../types/AppPhase';
+import type { AppPhase, CamKeyframe, CamData } from '../../shared/AppPhase';
 
 // ── Cinematic camera constants (values from recorded path data) ──────────────
 const CINEMATIC_POLAR       = 58.85 * (Math.PI / 180); // polar from recording

@@ -2,7 +2,7 @@ import { Shield, Play, Pause, SkipBack, SkipForward, VolumeX, Volume, Volume1, V
 import { THEMES } from '../shared/themes';
 import { ChessTitle } from './ChessTitle';
 import { cn } from '../lib/utils';
-import type { AppPhase } from '../types/AppPhase';
+import type { AppPhase } from '../shared/AppPhase';
 import { COMMENTARY_LEVELS, BG_LEVELS } from '../shared/audioLevels';
 
 const VOLUME_ICONS = [VolumeX, Volume, Volume1, Volume2] as const;

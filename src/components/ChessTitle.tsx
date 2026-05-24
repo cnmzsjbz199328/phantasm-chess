@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import type { AppPhase } from '../types/AppPhase';
+import type { AppPhase } from '../shared/AppPhase';
 
 interface ChessTitleProps {
   appPhase: AppPhase;
