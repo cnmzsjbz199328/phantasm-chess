@@ -168,7 +168,7 @@ export function useCommentaryAudio(
     //    we avoid a full-volume flash on iOS where .volume is read-only.
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    // Start playing first (user-gesture context) — volume controlled by GainNode
+    try { bg.volume = 0; } catch { /* read-only on iOS — GainNode will control it */ }
     bg.play().catch(() => {});
     preWarmBgRef.current = bg;
 
