@@ -99,6 +99,9 @@ export function useCommentaryAudio(
   // True only while audio is literally playing — used for BGM ducking so the
   // BGM restores to full volume the moment commentary ends (not at phase end).
   const [commentaryIsPlaying, setCommentaryIsPlaying] = useState(false);
+  // Ref mirror of commentaryIsPlaying so non-reactive effects (bgVol slider)
+  // can read the content-based state without causing stale-closure re-ducks.
+  const commentaryIsPlayingRef = useRef(false);
 
   // Guards against restarting commentary when themeId changes while already
   // active (the "one-render-gap" race during theme switch).
@@ -125,6 +128,7 @@ export function useCommentaryAudio(
   const playSegment = useCallback((index: number, total: number, theme: string) => {
     if (index >= total) {
       isCommentaryEndedRef.current = true;
+      commentaryIsPlayingRef.current = false;
       setCommentaryIsPlaying(false); // un-duck BGM now that commentary is done
       onCommentaryEndRef.current?.();
       return;
@@ -245,6 +249,7 @@ export function useCommentaryAudio(
     isCommentaryEndedRef.current = false;
 
     if (!isCommentaryActive) {
+      commentaryIsPlayingRef.current = false;
       setCommentaryIsPlaying(false);
       return; // cleanup return below handles stopping
     }
@@ -258,6 +263,7 @@ export function useCommentaryAudio(
     }
 
     // Fresh activation: start commentary for this theme.
+    commentaryIsPlayingRef.current = true;
     setCommentaryIsPlaying(true);
 
     if (segments > 0) {
@@ -273,6 +279,7 @@ export function useCommentaryAudio(
       commentaryRef.current = audio;
       audio.onended = () => {
         isCommentaryEndedRef.current = true;
+        commentaryIsPlayingRef.current = false;
         setCommentaryIsPlaying(false);
         onCommentaryEndRef.current?.();
       };
@@ -282,6 +289,7 @@ export function useCommentaryAudio(
     }
 
     return () => {
+      commentaryIsPlayingRef.current = false;
       setCommentaryIsPlaying(false);
       if (commentaryRef.current) {
         commentaryRef.current.onended = null;
@@ -314,7 +322,7 @@ export function useCommentaryAudio(
 
   useEffect(() => {
     if (bgRef.current) {
-      const effective = bgVol * (isCommentaryActiveRef.current ? COMMENTARY_DUCK : 1);
+      const effective = bgVol * (commentaryIsPlayingRef.current ? COMMENTARY_DUCK : 1);
       setAudioVolume(bgRef.current, effective);
     }
   }, [bgVol]);
