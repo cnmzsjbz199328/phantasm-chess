@@ -62,7 +62,9 @@ export function useGameOrchestrator({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const outroTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const outroTimerRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commentaryEndTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waitingFallbackInnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stable refs so fire-and-forget callbacks always read the latest values
   // without being recreated (avoids the stale-closure bug fixed previously).
@@ -88,10 +90,11 @@ export function useGameOrchestrator({
       // Commentary outlasted the game — play the final move, then epilogue.
       chessRef.current.nextStep();
       setAppPhase('finishing'); // transition cancels the waitingForAudio 20 s fallback
-      setTimeout(
-        () => setAppPhase(currentMetaRef.current ? 'epilogue' : 'idle'),
-        4500,
-      );
+      if (commentaryEndTimerRef.current) clearTimeout(commentaryEndTimerRef.current);
+      commentaryEndTimerRef.current = setTimeout(() => {
+        commentaryEndTimerRef.current = null;
+        setAppPhase(currentMetaRef.current ? 'epilogue' : 'idle');
+      }, 4500);
     } else if (phase === 'finishing') {
       setAppPhase('epilogue');
     }
@@ -126,7 +129,11 @@ export function useGameOrchestrator({
     if (appPhase === 'waitingForAudio') {
       const timer = setTimeout(() => {
         chessRef.current.nextStep();
-        setTimeout(() => setAppPhase(currentMetaRef.current ? 'epilogue' : 'idle'), 4500);
+        if (waitingFallbackInnerTimerRef.current) clearTimeout(waitingFallbackInnerTimerRef.current);
+        waitingFallbackInnerTimerRef.current = setTimeout(() => {
+          waitingFallbackInnerTimerRef.current = null;
+          setAppPhase(currentMetaRef.current ? 'epilogue' : 'idle');
+        }, 4500);
       }, 20_000);
       return () => clearTimeout(timer);
     }
@@ -141,6 +148,9 @@ export function useGameOrchestrator({
 
   // ── Theme switch reset ───────────────────────────────────────────────────
   useEffect(() => {
+    if (commentaryEndTimerRef.current) { clearTimeout(commentaryEndTimerRef.current); commentaryEndTimerRef.current = null; }
+    if (waitingFallbackInnerTimerRef.current) { clearTimeout(waitingFallbackInnerTimerRef.current); waitingFallbackInnerTimerRef.current = null; }
+    if (outroTimerRef.current) { clearTimeout(outroTimerRef.current); outroTimerRef.current = null; }
     setIsPlaying(false);
     setAppPhase('idle');
   }, [themeIdx]);
