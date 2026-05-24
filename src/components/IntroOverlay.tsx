@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import type { SceneMeta } from '../types/SceneMeta';
-import { SandParticleCanvas } from './SandParticleCanvas';
 
 interface Props {
   meta: SceneMeta;
@@ -14,7 +13,6 @@ export function IntroOverlay({ meta, onFinish }: Props) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [sandRects, setSandRects] = useState<{ header: DOMRect | null; body: DOMRect | null } | null>(null);
 
   const pages = meta.description;
   const currentText = pages[pageIndex] ?? '';
@@ -53,11 +51,9 @@ export function IntroOverlay({ meta, onFinish }: Props) {
 
   useEffect(() => {
     if (phase !== 'exiting') return;
-    setSandRects({
-      header: headerRef.current?.getBoundingClientRect() ?? null,
-      body: bodyRef.current?.getBoundingClientRect() ?? null,
-    });
-  }, [phase]);
+    const id = setTimeout(onFinish, 2400);
+    return () => clearTimeout(id);
+  }, [phase, onFinish]);
 
   const skipAll = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -85,13 +81,6 @@ export function IntroOverlay({ meta, onFinish }: Props) {
         </div>
       </div>
 
-      {sandRects && (
-        <SandParticleCanvas
-          headerRect={sandRects.header}
-          bodyRect={sandRects.body}
-          onComplete={onFinish}
-        />
-      )}
     </>
   );
 }

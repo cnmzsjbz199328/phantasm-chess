@@ -151,15 +151,15 @@ export function useCommentaryAudio(
     preWarmComRef.current = com;
 
     // 3. Start background music immediately at the correct volume.
-    //    The BGM effect will take ownership (preWarmBgRef → bgRef) and call
-    //    setAudioVolume once to hook it into the Web Audio graph for iOS volume
-    //    control. We intentionally do NOT call setAudioVolume here to avoid a
-    //    second createMediaElementSource call on the same element later.
-    //    We also intentionally do NOT pause after play() — the BGM should keep
+    //    setAudioVolume is called HERE (inside the user gesture) so the
+    //    AudioContext is guaranteed to be running when the GainNode is wired up.
+    //    gainNodeMap prevents any second createMediaElementSource call if the
+    //    BGM effect later calls setAudioVolume on the same element again.
+    //    We intentionally do NOT pause after play() — the BGM should keep
     //    playing through the countdown and intro phases without interruption.
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    try { bg.volume = bgVolRef.current; } catch { /* read-only on iOS — GainNode will control it */ }
+    setAudioVolume(bg, bgVolRef.current);
     bg.play().catch(() => {});
     preWarmBgRef.current = bg;
   }, [themeId, segments]);
@@ -202,22 +202,13 @@ export function useCommentaryAudio(
   }, [isAudioActive, themeId]); // isPaused deliberately omitted — use isPausedRef
 
   // ── Commentary playback management ────────────────────────────────────────
-  // isPaused and playSegment are intentionally excluded from deps.
-  // – isPaused is read via isPausedRef to avoid restarting commentary on
-  //   every pause/resume.
-  // – playSegment has a stable identity (empty deps) so including it here
-  //   would be safe, but it's excluded for clarity.
+  // isPaused omitted via ref; cleanup return stops the onended chain on dep change,
+  // preventing orphaned audio when the user switches to another match.
   useEffect(() => {
     isCommentaryEndedRef.current = false;
 
     if (!isCommentaryActive) {
-      if (commentaryRef.current) {
-        commentaryRef.current.onended = null;
-        commentaryRef.current.pause();
-        commentaryRef.current = null;
-      }
-      segIndexRef.current = 0;
-      return;
+      return; // cleanup return below handles stopping
     }
 
     if (segments > 0) {
@@ -237,6 +228,15 @@ export function useCommentaryAudio(
         audio.play().catch(() => {});
       }
     }
+
+    return () => {
+      if (commentaryRef.current) {
+        commentaryRef.current.onended = null;
+        commentaryRef.current.pause();
+        commentaryRef.current = null;
+      }
+      segIndexRef.current = 0;
+    };
   }, [isCommentaryActive, themeId, segments, playSegment]); // isPaused deliberately omitted
 
   // ── Pause / resume without resetting playback position ───────────────────

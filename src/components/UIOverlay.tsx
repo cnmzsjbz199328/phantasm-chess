@@ -12,10 +12,13 @@ export function UIOverlay({ narrative, currentStep, history, onSkip }: UIProps) 
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-end px-3 sm:px-8 pb-4 sm:pb-6 z-10 font-sans">
 
-      {/* Narrative — barely-there ambient inscription */}
+      {/* Narrative — key-move tactical announcement */}
       {narrative && (
-        <div className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 w-full max-w-sm sm:max-w-lg px-4 sm:px-0 text-center pointer-events-none">
-          <p className="text-[10px] text-white/20 font-light tracking-[0.4em] uppercase leading-loose">
+        <div
+          key={narrative}
+          className="narrative-banner absolute top-[13vh] left-0 right-0 text-center pointer-events-none"
+        >
+          <p className="narrative-text">
             {narrative}
           </p>
         </div>

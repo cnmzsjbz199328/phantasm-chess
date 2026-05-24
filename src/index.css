@@ -239,6 +239,39 @@ canvas {
   letter-spacing: 0.12em;
 }
 
+/* ── Key-move narrative banner ─────────────────────────────────── */
+@keyframes narrativeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.narrative-banner {
+  animation: narrativeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.narrative-text {
+  display: block;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  color: #ffd86b;
+  font-size: clamp(10px, 1.25vw, 13px);
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  line-height: 1.7;
+  padding: 8px 0;
+  text-shadow:
+    1px 1px 0 #7a4e00,
+    2px 2px 0 #4a2e00,
+    0 0 12px rgba(255, 210, 80, 0.55),
+    0 0 24px rgba(255, 165, 20, 0.25);
+}
+
 /* ── Mobile overrides (< 640px) ────────────────────────────────── */
 @media (max-width: 639px) {
   .intro-overlay {
