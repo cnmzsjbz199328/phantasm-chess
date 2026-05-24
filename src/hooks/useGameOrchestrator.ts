@@ -160,11 +160,11 @@ export function useGameOrchestrator({
   }, [appPhase, currentMeta]);
 
   // ── Auto-play interval ───────────────────────────────────────────────────
-  // chess/currentMeta are read through their stable refs so that unrelated
-  // re-renders (e.g. volume slider, camera debug at 5 fps) don't reset the
-  // 4500 ms timer. Only genuine playback-state changes restart the interval.
-  // isCommentaryEndedRef is a stable ref — both are intentionally omitted.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // chess.currentStep (a primitive) is the only chess dep — it changes only
+  // when a step actually advances, so the 4500 ms timer resets per step
+  // without being disrupted by unrelated re-renders (volume slider, camera
+  // debug at 5 fps, etc.).  currentMeta is stable (static lookup) and is read
+  // via ref; isCommentaryEndedRef is an intentionally stable ref — both omitted.
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
@@ -191,9 +191,9 @@ export function useGameOrchestrator({
       }, 4500);
     }
     return () => clearInterval(interval);
-  // chess/currentMeta/isCommentaryEndedRef accessed through stable refs — omitted intentionally
+  // currentMeta/isCommentaryEndedRef accessed through stable refs — omitted intentionally
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, isAnimating]);
+  }, [isPlaying, isAnimating, chess.currentStep]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const controlsLocked = isAnimating;
