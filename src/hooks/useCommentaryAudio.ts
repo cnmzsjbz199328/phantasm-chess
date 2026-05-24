@@ -142,6 +142,11 @@ export function useCommentaryAudio(
   // them "unlocked". The BGM element is stored for the BGM effect to reuse,
   // avoiding a second createMediaElementSource call on the same object.
   const preWarmAudio = useCallback(() => {
+    // Discard any previous pre-warm elements so they don't loop forever if
+    // this callback fires more than once before the prior Promise settles.
+    if (preWarmBgRef.current) { preWarmBgRef.current.pause(); preWarmBgRef.current = null; }
+    if (preWarmComRef.current) { preWarmComRef.current.pause(); preWarmComRef.current = null; }
+
     // 1. Initialize / resume AudioContext synchronously within the gesture
     const ctx = getAudioCtx();
     if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
