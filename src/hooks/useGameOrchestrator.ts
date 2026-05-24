@@ -27,11 +27,7 @@ function unlockAudioSession() {
   } catch { /* best-effort */ }
 }
 
-// ---------------------------------------------------------------------------
-// Volume preset levels (cycling through these on each button press)
-// ---------------------------------------------------------------------------
-export const COMMENTARY_LEVELS = [0, 0.4, 0.7, 1.0] as const;
-export const BG_LEVELS = [0, 0.1, 0.18, 0.35] as const;
+export { COMMENTARY_LEVELS, BG_LEVELS } from '../shared/audioLevels';
 
 type ChessEngine = ReturnType<typeof useChessEngine>;
 
