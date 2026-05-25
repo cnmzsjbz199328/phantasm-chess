@@ -96,7 +96,7 @@ export default function App() {
         {isFullscreen && !headerVisible && (
           <button
             onClick={toggleFullscreen}
-            title="退出全屏"
+            title="Exit Fullscreen"
             className="absolute top-3 right-3 z-30 p-1.5 rounded-lg bg-black/20 hover:bg-black/50 border border-white/10 transition-all opacity-30 hover:opacity-90 active:scale-95"
           >
             <Minimize2 size={13} className="text-white" />

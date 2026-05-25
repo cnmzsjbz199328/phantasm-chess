@@ -44,11 +44,11 @@ export interface SceneTheme {
 }
 
 export const THEMES: SceneTheme[] = [
-  // ─── 深渊幻域 ─────────────────────────────────────────────────────────────────
+  // ─── Abyss ────────────────────────────────────────────────────────────────────
   // Dark navy void; cyber-cyan clashes with crimson. The "canonical" WorldStage look.
   {
     id: "abyss",
-    nameCN: "卡帕不朽局",
+    nameCN: "Kasparov's Immortal",
     nameEN: "Kasparov",
     dot: "#2aaabf",
     backdrop:
@@ -88,11 +88,11 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── 罗马斗兽场 ───────────────────────────────────────────────────────────────
+  // ─── Arena ───────────────────────────────────────────────────────────────────
   // Golden hour in the ancient arena. Dusty sand, weathered travertine, and warm torches.
   {
     id: "arena",
-    nameCN: "不朽名局",
+    nameCN: "The Immortal Game",
     nameEN: "Immortal",
     dot: "#ffcc33",
     backdrop:
@@ -132,11 +132,11 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── 熔炉烈焰 ─────────────────────────────────────────────────────────────────
+  // ─── Molten ──────────────────────────────────────────────────────────────────
   // Volcanic forge. Scorched stone, ember sparks, molten orange and deep red.
   {
     id: "molten",
-    nameCN: "世纪之局",
+    nameCN: "Game of the Century",
     nameEN: "Century",
     dot: "#ff7030",
     backdrop:
@@ -176,11 +176,11 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── 霜境幽灵 ─────────────────────────────────────────────────────────────────
+  // ─── Frost ───────────────────────────────────────────────────────────────────
   // Arctic night. Crystalline ice, cold blue light, desolate silence.
   {
     id: "frost",
-    nameCN: "常青名局",
+    nameCN: "The Evergreen Game",
     nameEN: "Evergreen",
     dot: "#8be0ff",
     backdrop:
@@ -220,11 +220,11 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── 翡翠炼狱 ─────────────────────────────────────────────────────────────────
+  // ─── Jade ────────────────────────────────────────────────────────────────────
   // Ancient dark ritual. Poisonous jade seeping through void purple ruin.
   {
     id: "jade",
-    nameCN: "歌剧院局",
+    nameCN: "The Opera Game",
     nameEN: "Opera",
     dot: "#00e878",
     backdrop:

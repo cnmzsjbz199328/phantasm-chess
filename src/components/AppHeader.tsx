@@ -125,7 +125,7 @@ export function AppHeader({
           <div className="flex items-center pl-1.5 sm:pl-3 border-l border-white/10">
             <button
               onClick={toggleFullscreen}
-              title={isFullscreen ? '退出全屏' : '全屏'}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
               className="p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
             >
               {isFullscreen
@@ -138,19 +138,19 @@ export function AppHeader({
           <div className="hidden sm:flex items-center gap-1.5 pl-3 border-l border-white/10">
             <button
               onClick={() => onCommentaryLvlChange((commentaryLvlIdx + 1) % COMMENTARY_LEVELS.length)}
-              title={`解说音量 ${Math.round(commentaryVol * 100)}%`}
+              title={`Commentary volume ${Math.round(commentaryVol * 100)}%`}
               className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
             >
               {(() => { const Icon = VOLUME_ICONS[commentaryLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
-              <span className="text-[10px] text-slate-400 leading-none">解</span>
+              <span className="text-[10px] text-slate-400 leading-none">COM</span>
             </button>
             <button
               onClick={() => onBgLvlChange((bgLvlIdx + 1) % BG_LEVELS.length)}
-              title={`背景音量 ${Math.round(bgVol * 100)}%`}
+              title={`BGM volume ${Math.round(bgVol * 100)}%`}
               className="flex items-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95"
             >
               {(() => { const Icon = VOLUME_ICONS[bgLvlIdx]; return <Icon size={14} className="text-slate-300" />; })()}
-              <span className="text-[10px] text-slate-400 leading-none">背</span>
+              <span className="text-[10px] text-slate-400 leading-none">BGM</span>
             </button>
           </div>
         </div>
@@ -160,19 +160,19 @@ export function AppHeader({
       <div className="sm:hidden flex items-center justify-end gap-2 px-3 pb-2">
         <button
           onClick={() => onCommentaryLvlChange((commentaryLvlIdx + 1) % COMMENTARY_LEVELS.length)}
-          title={`解说音量 ${Math.round(commentaryVol * 100)}%`}
+          title={`Commentary volume ${Math.round(commentaryVol * 100)}%`}
           className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95 text-[10px] text-slate-400"
         >
           {(() => { const Icon = VOLUME_ICONS[commentaryLvlIdx]; return <Icon size={12} className="text-slate-300" />; })()}
-          解说
+          Commentary
         </button>
         <button
           onClick={() => onBgLvlChange((bgLvlIdx + 1) % BG_LEVELS.length)}
-          title={`背景音量 ${Math.round(bgVol * 100)}%`}
+          title={`BGM volume ${Math.round(bgVol * 100)}%`}
           className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all active:scale-95 text-[10px] text-slate-400"
         >
           {(() => { const Icon = VOLUME_ICONS[bgLvlIdx]; return <Icon size={12} className="text-slate-300" />; })()}
-          背景
+          BGM
         </button>
       </div>
     </header>
