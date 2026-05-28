@@ -6,40 +6,62 @@ A private box at the Paris Opera House, November 1858. Paul Morphy — the great
 ### Sample Context
 Esports / Modern sports commentary style. Extremely energetic, high pacing, hype-driven, and intensely engaging.
 
-### Audio output
-Generate each segment as a separate WAV file: `public/audio/jade/seg_1.wav` through `seg_5.wav`.
-After regenerating audio, restore `commentarySegments` to `5` in `src/data/matchMeta.ts`.
-
 ---
 
 ### Segments
 
+Each segment generates one MP3. Concatenate in order → `public/audio/jade/commentary.mp3`.
+
+**Target playback duration:** ~2:29 (33 ply × 4.5 s/move = 149 s).
+**Revised script estimate:** ~2:26–2:31 at ~165–170 wpm. Background and player context carry most of the runtime; the move sequence is intentionally brief because this is only a 17-move game. The broad lesson is placed at the end.
+
 ---
 
 #### Segment 1
+**Suggested duration:** ~34 s (≈ 95 words) · intro phase, before first move
 
-WELCOME to Phantasm Chess! Paris, 1858. The Paris Opera House. The curtain is up. The orchestra is playing. And in one of the private boxes, Paul Morphy — twenty-one years old, the greatest chess player alive — is being invited to play a game by the Duke of Brunswick and his friend Count Isouard. They will play as partners against him, two against one. Morphy agrees. The opera continues below. He wins in seventeen moves.
+Alright, WELCOME to Phantasm Chess! We are going to Paris — the Opera House — November 1858. The curtain is up. The orchestra is playing.
+
+And in one private box, three men are not watching the opera. They are playing chess.
+
+One of them is Paul Morphy. Twenty-one years old. An American from New Orleans who crossed the Atlantic to challenge Europe, and has already beaten nearly everyone worth naming. The Duke of Brunswick insists on a game. Morphy is a guest, so he agrees. Seventeen moves later, chess has a masterpiece.
 
 ---
 
 #### Segment 2
+**Suggested duration:** ~45 s (≈ 125 words) · Morphy context over early moves
 
-Paul Morphy invented modern chess. Not literally — but functionally. His philosophy: develop your pieces fast, control the center, open the files for your rooks, then attack. That sounds obvious now because Morphy MADE it obvious. While everyone around him was improvising, Morphy had principles. He crossed the Atlantic and defeated every serious chess player in Europe. This game — played between opera acts, in a private box, at half-attention — takes him minutes.
+Morphy is unlike anyone before him. Born in New Orleans in 1837, he teaches himself chess by watching family games. By twelve he is beating the best players in Louisiana. By eighteen he has finished law school. Too young to practice, he goes to New York and wins the First American Chess Congress without losing a match.
+
+Then Europe. Anderssen loses to him. Everyone else loses too. Morphy's secret is clarity. Develop fast. Control the center. Open files. Attack before your opponent is ready. These ideas sound obvious now because Morphy made them obvious.
+
+That is why the Opera Game is so useful. It is not Morphy showing off with impossible tactics. It is Morphy applying simple principles faster and more cleanly than anyone around him can answer.
 
 ---
 
 #### Segment 3
+**Suggested duration:** ~31 s (≈ 88 words) · opponent context + position setup
 
-The Duke and Count play the Philidor Defense and proceed to make every mistake Morphy expects. They trade off their active pieces, give him the open d-file, and leave their king uncastled in the center. By move eight, Morphy has both rooks pointed straight at their king and their pieces doing nothing useful. He described this as a fundamentally lost position. The punishment is coming fast.
+The Duke of Brunswick and Count Isouard consult together — two against one. That is the only concession Morphy makes. They are enthusiastic players, but they are not at his level.
+
+They choose the Philidor Defense, solid but passive. Morphy develops. They trade active pieces. They leave the king in the center. By move eight, Morphy has castled queenside, his rooks are alive, and the open d-file is aimed straight at their king. The punishment is coming fast.
 
 ---
 
 #### Segment 4
+**Suggested duration:** ~30 s (≈ 85 words) · compressed 17-move finish
 
-Move ten — knight to b5, unprovoked sacrifice. They capture. Bishop to b5, check. Morphy castles queenside — both rooks locked onto the d-file. Move thirteen: rook takes d7, straight into their rook. They recapture. Morphy slides the second rook to d1. Total file control. Their queen scrambles to e6 looking for any defense. Move sixteen: queen to b8 — offered directly. They take it. Rook to d8. Checkmate.
+Move ten. Knight takes b5. Morphy gives up a knight to open the position. Bishop to b5. Check. The king is dragged out.
+
+Then rook takes d7. Another sacrifice, this time to seize the file. The remaining rook comes to d1. Everything is aimed at the same king.
+
+Move sixteen. Queen to b8. The queen is offered and taken. Then rook to d8. The captured queen's knight blocks its own king. The bishop covers the escape. Checkmate.
 
 ---
 
 #### Segment 5
+**Suggested duration:** ~11 s (≈ 32 words) · final recap + epilogue
 
-Checkmate on move seventeen. The opera is still playing. Every sacrifice Morphy made — the knight, the rook, the queen — was the logic of the position made visible. He saw it. They didn't. Chess teachers still use this game to show what it looks like when someone truly understands the game. Seventeen moves. One private box. Chess was never taught the same way again.
+Seventeen moves. One private opera box. And the opera is still playing.
+
+The Opera Game is not just brilliance. It is a lesson: develop, open lines, punish the king in the center. Morphy did not need a manifesto. He had the board.

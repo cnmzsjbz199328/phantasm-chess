@@ -6,40 +6,68 @@ A casual sidegame played between rounds at the Great International Chess Tournam
 ### Sample Context
 Esports / Modern sports commentary style. Extremely energetic, high pacing, hype-driven, and intensely engaging.
 
-### Audio output
-Generate each segment as a separate WAV file: `public/audio/arena/seg_1.wav` through `seg_5.wav`.
-After regenerating audio, restore `commentarySegments` to `5` in `src/data/matchMeta.ts`.
-
 ---
 
 ### Segments
 
+Each segment generates one MP3. Concatenate in order → `public/audio/arena/commentary.mp3`.
+
+**Target playback duration:** ~3:23 (45 ply × 4.5 s/move = 203 s).
+**Revised script estimate:** ~3:18–3:24 at ~165–170 wpm. Background and player context carry most of the runtime; the move sequence is compressed so the narration does not chase every animation beat. The broad interpretation is placed at the end.
+
 ---
 
 #### Segment 1
+**Suggested duration:** ~42 s (≈ 120 words) · intro phase, before first move
 
-WELCOME to Phantasm Chess! London, 1851. The first international chess tournament in history. And between rounds, with nothing official at stake, two of the greatest masters in Europe sit down for a casual game. No title, no prize, no clock pressure. And in that throwaway game, one of them plays the most extraordinary attacking sequence the sport has ever seen. It earns a name immediately. That name has not changed in one hundred and seventy-five years. We are watching The Immortal Game.
+Alright, WELCOME to Phantasm Chess! We are going all the way back — London, 1851. The Great International Chess Tournament. The first international chess tournament ever held.
+
+The city is hosting the world's fair. The Crystal Palace is full of machines, industry, noise, speed. And chess is changing too. For the first time, Europe's strongest masters are gathered in one place. Between rounds, with no title on the line and no prize money at stake, two of them sit down for a casual game.
+
+Nobody in the room can know this sidegame will become more famous than the official event around it. That is part of its legend: no ceremony, no trophy, no dramatic staging. Just two masters, a board, and one attack that refuses to die.
+
+That casual game becomes the most famous attack ever played. We are watching the Immortal Game.
 
 ---
 
 #### Segment 2
+**Suggested duration:** ~57 s (≈ 160 words) · player context over early opening
 
-Adolf Anderssen is the best attacking player of his era. His style has a label: Romantic chess. That means sacrificing your pieces — rooks, bishops, your queen — to rip the enemy king open and hunt it down. The goal is not efficiency. The goal is FORCE. And here is the critical thing about 1851: no engines, no databases, no theory downloads. Whatever Anderssen calculates, he calculates himself — at the board, in his head, staking his reputation on his own arithmetic alone. That takes a different kind of nerve than anything we see in modern chess.
+Adolf Anderssen has the white pieces. Thirty-three years old. German. A mathematics professor from Breslau who learned chess as a child and never really stopped thinking about it. He goes on to win the whole tournament, beating the strongest field Europe can assemble. But history keeps coming back to this sidegame.
+
+Anderssen is the supreme attacking player of the Romantic era. Romantic chess does not mean soft. It means open files, exposed kings, pieces thrown forward if the attack justifies it. Material is not ignored; it is converted into time, initiative, and danger.
+
+And remember the year. No engines. No databases. No cloud analysis. If Anderssen sacrifices, the proof has to exist in his own head, at the board, in real time. That is why the game still feels dangerous.
 
 ---
 
 #### Segment 3
+**Suggested duration:** ~48 s (≈ 135 words) · opponent context + tension buildup
 
-Across the board is Lionel Kieseritzky. One of the most dangerous tactical players in Europe. He runs a chess café in Paris, knows the openings cold, came to London to compete at the highest level. He is a real threat. The opening is a King's Gambit — Anderssen offers a pawn on move two, inviting chaos. Kieseritzky accepts. By move eleven he has grabbed the pawn and even checked the king. He is feeling in control. He is not in control. Anderssen has been guiding this position toward one specific configuration the entire time.
+Across from him is Lionel Kieseritzky: Latvian-born, Paris-based, a dangerous tactical player who gives lessons in the cafés and knows sharp positions cold. He is not a random opponent. He is exactly the kind of player who should survive chaos.
+
+The opening is a King's Gambit. Anderssen offers a pawn on move two: take it, open the center, let the fight begin. Kieseritzky accepts and starts collecting material. He checks the king. He grabs space. He looks comfortable.
+
+But Anderssen is shaping the board toward one final configuration. Every quiet move is preparation. Every apparently normal development is setup. By move seventeen, the position looks playable for Black. It is not.
 
 ---
 
 #### Segment 4
+**Suggested duration:** ~52 s (≈ 145 words) · compressed sacrifice sequence
 
-Move eighteen. Kieseritzky sees Anderssen's rook sitting undefended on g1. Free material — he takes it. Five points against three. Then Anderssen plays e5 — and his OTHER rook, sitting on a1, is also undefended, also free. Kieseritzky's queen sweeps across and grabs THAT one too, giving check. Anderssen now has zero rooks. Kieseritzky is up two rooks and a bishop. And then Anderssen plays Qf6 — sliding his queen directly into the line of fire. Kieseritzky takes the queen. He is now up a queen and two rooks. And then he sees Bishop to e7. Checkmate.
+Move eighteen. Bishop to d6. Anderssen plants a bishop deep in Black's position and leaves a rook hanging. Kieseritzky takes it.
+
+Anderssen plays e5. Now the other rook is hanging too. Kieseritzky takes that as well, with check. Two rooks gone. By normal material rules, this should be over.
+
+The king steps calmly to e2. Knight to g7. Check. Then the queen goes to f6, and Anderssen offers her too. Kieseritzky takes. Now Black has won two rooks and a queen. And only now does the trap become visible.
+
+Bishop to e7. Checkmate. Two bishops and a knight seal the king in. The material count is absurd. The position is final.
 
 ---
 
 #### Segment 5
+**Suggested duration:** ~23 s (≈ 65 words) · final recap + epilogue
 
-Checkmate — with two bishops and a knight. No queen. No rooks. Kieseritzky understood immediately. The queen sacrifice was not reckless. It was forced and correct. The bishop battery was a mating net with zero escapes — every variation leads to the same end — and Anderssen had seen all of it before he gave away the first rook on move eighteen. One continuous calculation, completed in his own head, in a casual sidegame between rounds of a tournament he was also winning. The chess world called it The Immortal Game before the ink on the first report was dry. That name has never been questioned.
+That is the point of the Immortal Game. The sacrifices are not decorative. They remove defenders, pull pieces away, and force the king into a net that already exists.
+
+Anderssen gives away almost everything, but never gives away control. That is why this casual sidegame outlived the tournament around it. Not because it was balanced. Because for a few moves, chess looked like pure attack made inevitable.
