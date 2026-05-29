@@ -13,7 +13,7 @@ const _hmr = (import.meta as unknown as { hot?: { dispose: (fn: () => void) => v
 if (_hmr) _hmr.dispose(() => { globalAudioCtx?.close(); globalAudioCtx = null; });
 
 /** BGM volume multiplier applied while commentary is audible (0–1). */
-const COMMENTARY_DUCK = 0.4;
+const COMMENTARY_DUCK = 0.3;
 
 /** Returns (creating if needed) the singleton AudioContext. */
 function getAudioCtx(): AudioContext | null {

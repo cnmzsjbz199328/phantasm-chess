@@ -120,9 +120,9 @@ finishing
   ──► epilogue         commentaryEndTimerRef fires after 4 500 ms
   ──► epilogue         15 s fallback (timer guard only)
 epilogue
-  ──► outro            after 5 s (BGM fades over this window)
+  ──► outro            after 5 s (BGM continues playing)
 outro
-  ──► idle             user closes overlay
+  ──► idle             user closes overlay (BGM fades out ~300 ms on close)
 ```
 
 ### Per-Phase Invariants

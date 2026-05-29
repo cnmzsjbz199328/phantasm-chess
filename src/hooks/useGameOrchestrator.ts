@@ -136,14 +136,12 @@ export function useGameOrchestrator({
   }, [appPhase]);
 
   // ── Epilogue → outro ─────────────────────────────────────────────────────
-  // Fade BGM over the full epilogue window (5 s) so music is silent by the
-  // time the outro overlay appears — matches film convention.
+  // BGM keeps playing through epilogue and outro; fade happens on outro close.
   useEffect(() => {
     if (appPhase !== 'epilogue') return;
-    fadeBgOut(5000);
     const timer = setTimeout(() => setAppPhase('outro'), 5000);
     return () => clearTimeout(timer);
-  }, [appPhase, fadeBgOut]);
+  }, [appPhase]);
 
   // ── Theme switch reset ───────────────────────────────────────────────────
   useEffect(() => {
@@ -243,13 +241,13 @@ export function useGameOrchestrator({
   }, []);
 
   const handleOutroClose = useCallback(() => {
-    // BGM was already faded to zero during the epilogue phase — just reset state.
+    fadeBgOut(300);
     if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
     outroTimerRef.current = setTimeout(() => {
       setAppPhase('idle');
       chessRef.current.goToStep(0);
     }, 300);
-  }, []);
+  }, [fadeBgOut]);
 
   const playButtonDisabled =
     appPhase === 'countdown' ||
