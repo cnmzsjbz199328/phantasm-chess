@@ -73,35 +73,8 @@ export function useGameOrchestrator({
   const currentMetaRef = useRef(currentMeta);
   currentMetaRef.current = currentMeta;
 
-  // Mirror appPhase in a ref so handleCommentaryEnd can read the live value
-  // without capturing a stale closure AND without using a functional updater
-  // (React requires updater fns to be pure — nextStep() is a side effect).
-  const appPhaseRef = useRef<AppPhase>('idle');
-  appPhaseRef.current = appPhase;
-
-  // ── handleCommentaryEnd ──────────────────────────────────────────────────
-  // Reads live phase through appPhaseRef (updated every render).
-  // When commentary ends in 'waitingForAudio', we transition to 'finishing'
-  // so the 20 s fallback useEffect runs its cleanup and cancels the timer —
-  // preventing the double nextStep() that occurred when phase stayed unchanged.
-  const handleCommentaryEnd = useCallback(() => {
-    const phase = appPhaseRef.current;
-    if (phase === 'waitingForAudio') {
-      // Commentary outlasted the game — play the final move, then epilogue.
-      chessRef.current.nextStep();
-      setAppPhase('finishing'); // transition cancels the waitingForAudio 20 s fallback
-      if (commentaryEndTimerRef.current) clearTimeout(commentaryEndTimerRef.current);
-      commentaryEndTimerRef.current = setTimeout(() => {
-        commentaryEndTimerRef.current = null;
-        setAppPhase(currentMetaRef.current ? 'epilogue' : 'idle');
-      }, 4500);
-    } else if (phase === 'finishing') {
-      setAppPhase('epilogue');
-    }
-  }, []); // stable — all runtime state accessed through refs
-
   // ── Audio ────────────────────────────────────────────────────────────────
-  const { fadeBgOut, isCommentaryEndedRef, preWarmAudio } = useCommentaryAudio(
+  const { fadeBgOut, isCommentaryEndedRef, preWarmAudio, commentaryEnded } = useCommentaryAudio(
     themeId,
     appPhase !== 'idle',
     appPhase === 'playing' ||
@@ -114,8 +87,31 @@ export function useGameOrchestrator({
     currentMeta?.commentarySegments ?? 0,
     commentaryVol,
     bgVol,
-    handleCommentaryEnd,
   );
+
+  // ── Commentary-end coordination ──────────────────────────────────────────
+  // commentaryEnded is React state (not a ref), so this effect is guaranteed
+  // to fire AFTER both appPhase and commentaryEnded are committed — eliminating
+  // the React 18 concurrent-mode race where onended fired before appPhaseRef
+  // was updated, causing handleCommentaryEnd to read a stale phase value.
+  useEffect(() => {
+    if (!commentaryEnded) return;
+    if (appPhase === 'waitingForAudio') {
+      // Commentary outlasted the game — play the final move, then epilogue.
+      chessRef.current.nextStep();
+      setAppPhase('finishing'); // transition cancels the waitingForAudio 20 s fallback
+      if (commentaryEndTimerRef.current) clearTimeout(commentaryEndTimerRef.current);
+      commentaryEndTimerRef.current = setTimeout(() => {
+        commentaryEndTimerRef.current = null;
+        setAppPhase(currentMetaRef.current ? 'epilogue' : 'idle');
+      }, 4500);
+    } else if (appPhase === 'finishing' && !commentaryEndTimerRef.current) {
+      // Commentary ended while already in finishing (e.g., game reached final
+      // step before commentary ended). Only fire if the 4500 ms timer started
+      // by the waitingForAudio branch above is not already pending.
+      setAppPhase('epilogue');
+    }
+  }, [appPhase, commentaryEnded]);
 
   // ── Fallback timeouts ────────────────────────────────────────────────────
   // Guard against onended never firing (network failure, browser quirk).
@@ -140,11 +136,14 @@ export function useGameOrchestrator({
   }, [appPhase]);
 
   // ── Epilogue → outro ─────────────────────────────────────────────────────
+  // Fade BGM over the full epilogue window (5 s) so music is silent by the
+  // time the outro overlay appears — matches film convention.
   useEffect(() => {
     if (appPhase !== 'epilogue') return;
+    fadeBgOut(5000);
     const timer = setTimeout(() => setAppPhase('outro'), 5000);
     return () => clearTimeout(timer);
-  }, [appPhase]);
+  }, [appPhase, fadeBgOut]);
 
   // ── Theme switch reset ───────────────────────────────────────────────────
   useEffect(() => {
@@ -244,15 +243,13 @@ export function useGameOrchestrator({
   }, []);
 
   const handleOutroClose = useCallback(() => {
-    // Delay idle reset to match the fade — setting idle immediately would kill
-    // the BGM effect (isAudioActive = false) before the fade completes.
-    fadeBgOut(2000);
+    // BGM was already faded to zero during the epilogue phase — just reset state.
     if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
     outroTimerRef.current = setTimeout(() => {
       setAppPhase('idle');
       chessRef.current.goToStep(0);
-    }, 2000);
-  }, [fadeBgOut]);
+    }, 300);
+  }, []);
 
   const playButtonDisabled =
     appPhase === 'countdown' ||

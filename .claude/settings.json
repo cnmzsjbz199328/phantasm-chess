@@ -8,7 +8,13 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\tj169\\\\OneDrive - Flinders\\\\work\\\\Learning\\\\phantasm-chess\" -Recurse)",
       "Bash(Select-Object -First 50)",
       "Bash(Format-List FullName)",
-      "Bash(xargs wc -l)"
+      "Bash(xargs wc -l)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\tj169\\\\Flinders\\\\work\\\\Learning\\\\phantasm-chess\\\\.claude\\\\skills\")",
+      "Bash(ls -la public/audio/molten/seg_*.wav)",
+      "Bash(dir /a public\\\\audio\\\\molten\\\\seg_*.wav)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\tj169\\Flinders\\work\\Learning\\phantasm-chess\\.claude"
     ]
   }
 }

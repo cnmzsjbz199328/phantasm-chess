@@ -13,7 +13,7 @@ const _hmr = (import.meta as unknown as { hot?: { dispose: (fn: () => void) => v
 if (_hmr) _hmr.dispose(() => { globalAudioCtx?.close(); globalAudioCtx = null; });
 
 /** BGM volume multiplier applied while commentary is audible (0–1). */
-const COMMENTARY_DUCK = 0.28;
+const COMMENTARY_DUCK = 0.4;
 
 /** Returns (creating if needed) the singleton AudioContext. */
 function getAudioCtx(): AudioContext | null {
@@ -44,10 +44,15 @@ function setAudioVolume(audio: HTMLAudioElement, volume: number, rampMs = 0) {
       gainNode.connect(ctx.destination);
       gainNodeMap.set(audio, gainNode);
     }
+    const now = ctx.currentTime;
+    // Cancel any in-flight ramp then anchor current value before scheduling new one.
+    // Without this, a new ramp would be queued *after* an ongoing one and cause a jump.
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
     if (rampMs > 0) {
-      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + rampMs / 1000);
+      gainNode.gain.linearRampToValueAtTime(volume, now + rampMs / 1000);
     } else {
-      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+      gainNode.gain.setValueAtTime(volume, now);
     }
   } catch (e) {
     console.warn('Web Audio API volume control failed:', e);
@@ -69,7 +74,6 @@ export function useCommentaryAudio(
   segments = 0,
   commentaryVol = 1.0,
   bgVol = 0.18,
-  onCommentaryEnd?: () => void,
 ) {
   const commentaryRef    = useRef<HTMLAudioElement | null>(null);
   const bgRef            = useRef<HTMLAudioElement | null>(null);
@@ -83,18 +87,20 @@ export function useCommentaryAudio(
   // Refs so callbacks always read the *latest* value without being re-created
   const commentaryVolRef      = useRef(commentaryVol);
   const bgVolRef              = useRef(bgVol);
-  const onCommentaryEndRef    = useRef(onCommentaryEnd);
   const isPausedRef           = useRef(isPaused);
   const isCommentaryActiveRef = useRef(isCommentaryActive);
 
   commentaryVolRef.current      = commentaryVol;
   bgVolRef.current              = bgVol;
-  onCommentaryEndRef.current    = onCommentaryEnd;
   isPausedRef.current           = isPaused;
   isCommentaryActiveRef.current = isCommentaryActive;
 
-  // Tracks whether all commentary segments have finished — read by the interval
+  // Tracks whether all commentary segments have finished.
+  // Exposed as React state (commentaryEnded) so useGameOrchestrator can
+  // coordinate the waitingForAudio→finishing transition via useEffect without
+  // relying on appPhaseRef, eliminating the React 18 concurrent-mode race.
   const isCommentaryEndedRef = useRef(false);
+  const [commentaryEnded, setCommentaryEnded] = useState(false);
 
   // True only while audio is literally playing — used for BGM ducking so the
   // BGM restores to full volume the moment commentary ends (not at phase end).
@@ -107,9 +113,18 @@ export function useCommentaryAudio(
   // active (the "one-render-gap" race during theme switch).
   const wasCommentaryActiveRef = useRef(false);
 
+  // Pending duck / unduck setTimeout handles — cancelled on direction reversal.
+  const duckTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unduckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // True once a duck has actually been initiated — prevents a spurious unduck on mount.
+  const wasDuckedRef   = useRef(false);
+
   const segIndexRef = useRef(0);
 
   const stopAll = useCallback(() => {
+    if (duckTimerRef.current)   { clearTimeout(duckTimerRef.current);   duckTimerRef.current   = null; }
+    if (unduckTimerRef.current) { clearTimeout(unduckTimerRef.current); unduckTimerRef.current = null; }
+    wasDuckedRef.current = false;
     if (commentaryRef.current) {
       commentaryRef.current.onended = null;
       commentaryRef.current.pause();
@@ -128,9 +143,9 @@ export function useCommentaryAudio(
   const playSegment = useCallback((index: number, total: number, theme: string) => {
     if (index >= total) {
       isCommentaryEndedRef.current = true;
+      setCommentaryEnded(true); // React state — lets useGameOrchestrator react via useEffect
       commentaryIsPlayingRef.current = false;
       setCommentaryIsPlaying(false); // un-duck BGM now that commentary is done
-      onCommentaryEndRef.current?.();
       return;
     }
     // Reuse the pre-warmed element for segment 0 to avoid autoplay blocks
@@ -247,6 +262,7 @@ export function useCommentaryAudio(
     wasCommentaryActiveRef.current = isCommentaryActive;
 
     isCommentaryEndedRef.current = false;
+    setCommentaryEnded(false);
 
     if (!isCommentaryActive) {
       commentaryIsPlayingRef.current = false;
@@ -279,9 +295,9 @@ export function useCommentaryAudio(
       commentaryRef.current = audio;
       audio.onended = () => {
         isCommentaryEndedRef.current = true;
+        setCommentaryEnded(true);
         commentaryIsPlayingRef.current = false;
         setCommentaryIsPlaying(false);
-        onCommentaryEndRef.current?.();
       };
       if (!isPausedRef.current) {
         audio.play().catch(() => {});
@@ -327,33 +343,76 @@ export function useCommentaryAudio(
     }
   }, [bgVol]);
 
-  // ── BGM ducking — lower while commentary is literally playing, restore after ──
-  // Keyed on commentaryIsPlaying (content-based) rather than isCommentaryActive
-  // (phase-based) so the BGM un-ducks the moment the last segment ends instead
-  // of waiting for the phase to return to idle.
+  // ── BGM ducking — film-standard: pre-delay → slow fade → hold → post-delay → slow restore ──
+  // Duck:   wait 3 s then ramp to 40 % over 5 s  (commentary is short — listener adjusts first)
+  // Unduck: wait 3 s then ramp to 100 % over 3 s (slightly faster rise is less noticeable)
+  // Keyed on commentaryIsPlaying (content-based) so the BGM restores the instant the last
+  // segment ends rather than waiting for the phase machine to reach idle.
   useEffect(() => {
-    if (!bgRef.current) return;
-    const target = bgVolRef.current * (commentaryIsPlaying ? COMMENTARY_DUCK : 1);
-    setAudioVolume(bgRef.current, target, 600);
+    const bg = bgRef.current;
+    if (!bg) return;
+
+    if (commentaryIsPlaying) {
+      wasDuckedRef.current = true;
+      if (unduckTimerRef.current) { clearTimeout(unduckTimerRef.current); unduckTimerRef.current = null; }
+      duckTimerRef.current = setTimeout(() => {
+        duckTimerRef.current = null;
+        if (bgRef.current !== bg) return;
+        setAudioVolume(bg, bgVolRef.current * COMMENTARY_DUCK, 5000);
+      }, 3000);
+    } else if (wasDuckedRef.current) {
+      if (duckTimerRef.current) { clearTimeout(duckTimerRef.current); duckTimerRef.current = null; }
+      unduckTimerRef.current = setTimeout(() => {
+        unduckTimerRef.current = null;
+        if (bgRef.current !== bg) return;
+        setAudioVolume(bg, bgVolRef.current, 3000);
+      }, 3000);
+    }
+
+    return () => {
+      if (duckTimerRef.current)   { clearTimeout(duckTimerRef.current);   duckTimerRef.current   = null; }
+      if (unduckTimerRef.current) { clearTimeout(unduckTimerRef.current); unduckTimerRef.current = null; }
+    };
   }, [commentaryIsPlaying]);
 
   // Stop everything on unmount
   useEffect(() => stopAll, [stopAll]);
 
-  // ── BGM fade-out (used during epilogue) ───────────────────────────────────
+  // ── BGM fade-out (triggered at epilogue start) ────────────────────────────
+  // Cancels any pending duck/unduck transition so they don't fight the fade.
+  // Reads the *current* GainNode value as start point — correct whether BGM
+  // is fully up, mid-duck ramp, or partially ducked.
   const fadeBgOut = useCallback((durationMs: number) => {
+    if (duckTimerRef.current)   { clearTimeout(duckTimerRef.current);   duckTimerRef.current   = null; }
+    if (unduckTimerRef.current) { clearTimeout(unduckTimerRef.current); unduckTimerRef.current = null; }
+
     const audio = bgRef.current;
     if (!audio) return;
-    const startTime = performance.now();
-    const tick = () => {
-      if (bgRef.current !== audio) return;
-      const t = Math.min((performance.now() - startTime) / durationMs, 1);
-      setAudioVolume(audio, bgVolRef.current * (1 - t));
-      if (t < 1) requestAnimationFrame(tick);
-      else { audio.pause(); bgRef.current = null; }
-    };
-    requestAnimationFrame(tick);
+
+    const ctx = getAudioCtx();
+    const gainNode = gainNodeMap.get(audio);
+    if (ctx && gainNode) {
+      const now = ctx.currentTime;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+      gainNode.gain.linearRampToValueAtTime(0, now + durationMs / 1000);
+      setTimeout(() => {
+        if (bgRef.current === audio) { audio.pause(); bgRef.current = null; }
+      }, durationMs);
+    } else {
+      // Fallback path (GainNode not yet wired — very early call)
+      const startTime = performance.now();
+      const startVol = bgVolRef.current;
+      const tick = () => {
+        if (bgRef.current !== audio) return;
+        const t = Math.min((performance.now() - startTime) / durationMs, 1);
+        setAudioVolume(audio, startVol * (1 - t));
+        if (t < 1) requestAnimationFrame(tick);
+        else { audio.pause(); bgRef.current = null; }
+      };
+      requestAnimationFrame(tick);
+    }
   }, []);
 
-  return { fadeBgOut, isCommentaryEndedRef, preWarmAudio };
+  return { fadeBgOut, isCommentaryEndedRef, preWarmAudio, commentaryEnded };
 }

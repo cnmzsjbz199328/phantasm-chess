@@ -90,3 +90,73 @@ The two pages (`src/` and `piece-showcase/`) share code via relative imports. Im
 ### Styling
 
 Tailwind utility classes for all HTML/DOM elements. Avoid inline `style={{}}` objects in production components (acceptable in the `piece-showcase` sandbox). Do not add a `tailwind.config.js`; custom tokens go in `src/index.css` under `@layer base` / CSS variables.
+
+---
+
+## Audio / Visual Timing Specification
+
+> **Authority**: This section is the single source of truth for audio–visual synchronisation. The `/timing-audit` skill audits the codebase against these invariants. Any code change that touches `useGameOrchestrator.ts`, `useCommentaryAudio.ts`, or `AppPhase` must remain consistent with every invariant listed here.
+
+### Phase State Machine
+
+Legal transitions only (no other transitions are permitted):
+
+```
+idle
+  ──► countdown        user presses play
+countdown
+  ──► intro            currentMeta exists, after 3 s
+  ──► playing          no currentMeta, after 3 s
+intro
+  ──► playing          handleIntroFinish()
+playing
+  ──► waitingForAudio  interval: currentStep === N-2 AND commentary not yet ended
+  ──► finishing        interval: currentStep === N-1 AND commentary already ended
+  ──► idle             interval: currentStep === N-1 AND no currentMeta
+waitingForAudio
+  ──► finishing        commentaryEnded React-state useEffect fires (normal path)
+  ──► finishing        20 s fallback (onended never fired — guard only)
+finishing
+  ──► epilogue         commentaryEndTimerRef fires after 4 500 ms
+  ──► epilogue         15 s fallback (timer guard only)
+epilogue
+  ──► outro            after 5 s (BGM fades over this window)
+outro
+  ──► idle             user closes overlay
+```
+
+### Per-Phase Invariants
+
+| Phase | `isPlaying` | `isCommentaryActive` | `isPaused` | Auto-interval |
+|-------|-------------|----------------------|------------|---------------|
+| idle / countdown / intro | false | false | false | stopped |
+| **playing** | **true** | true | `!isPlaying && phase==='playing'` | running (4 500 ms) |
+| **waitingForAudio** | **false** | **true** | **false** | **stopped** |
+| finishing | false | true | false | stopped |
+| epilogue | false | true | false | stopped |
+| outro | false | true | false | stopped |
+
+Critical: `isPaused = !isPlaying && appPhase === 'playing'`. This expression must never evaluate to `true` during `waitingForAudio`; commentary audio must keep playing uninterrupted.
+
+### Final-Move Rule
+
+The final chess move (step N-1) is played **exactly once**, by **exactly one** of:
+
+1. The `commentaryEnded` React-state `useEffect` in `useGameOrchestrator` — commentary ends naturally while `appPhase === 'waitingForAudio'`
+2. The 20 s fallback timeout — `onended` never fired (network failure / browser quirk)
+
+These two paths are mutually exclusive. The 20 s fallback is cancelled by the `appPhase` effect cleanup the moment `appPhase` changes away from `waitingForAudio`.
+
+### React 18 Concurrent-Mode Race — Resolved
+
+In the previous design, `appPhaseRef.current` was updated during React render. A browser `onended` event could fire before React committed queued state updates, so the old `handleCommentaryEnd` callback could read a stale phase value.
+
+**Resolution**: `handleCommentaryEnd` and `appPhaseRef` have been removed. Commentary end is now signalled via `commentaryEnded` React state (set by `setCommentaryEnded(true)` inside `useCommentaryAudio`). `useGameOrchestrator` reacts via `useEffect([appPhase, commentaryEnded])` — both values are guaranteed committed before the effect fires, eliminating the race entirely.
+
+### BGM Ducking Rule
+
+BGM volume is controlled by `commentaryIsPlaying` (content-based), **not** by `appPhase`. BGM must restore to full volume the instant the last commentary segment ends, regardless of which phase the app is in. Never key duck/unduck on phase transitions.
+
+### Commentary Effect Re-run Guard
+
+The commentary `useEffect` resets `isCommentaryEndedRef.current = false` unconditionally at its top. If this effect re-runs while commentary is already active (any dep changes), the reset is premature and will corrupt the gate used by the auto-play interval. Deps of this effect must be kept minimal and stable.
