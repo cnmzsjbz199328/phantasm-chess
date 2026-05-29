@@ -176,40 +176,32 @@ export function useCommentaryAudio(
     const ctx = getAudioCtx();
     if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
 
-    // 2. Unlock commentary audio (played silently then paused)
+    // 2. Unlock commentary audio (played silently then paused).
+    //    setAudioVolume (GainNode-based) must be called before play() — iOS ignores .volume writes.
     const segFile =
       segments > 0
         ? `/audio/${themeId}/seg_1.wav`
         : `/audio/${themeId}/commentary.mp3`;
     const com = new Audio(segFile);
-    com.volume = 0;
     preWarmComRef.current = com;
+    setAudioVolume(com, 0); // wires GainNode at gain=0 synchronously before play
 
-    // 3. Start background music at volume 0, wire GainNode after com settles.
+    // 3. Start background music at volume 0 via GainNode before play(), then ramp after unlock.
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    try { bg.volume = 0; } catch { /* read-only on iOS — GainNode will control it */ }
-    bg.play().catch(() => {});
     preWarmBgRef.current = bg;
+    setAudioVolume(bg, 0); // wires GainNode at gain=0 synchronously before play
+    bg.play().catch(() => {});
 
     Promise.resolve(com.play().catch(() => {})).then(() => {
       if (preWarmComRef.current === com) { com.pause(); com.currentTime = 0; }
+      // GainNode already wired by setAudioVolume above — just ramp BGM to target level.
       const gainCtx = getAudioCtx();
-      if (gainCtx && preWarmBgRef.current === bg) {
-        try {
-          let gainNode = gainNodeMap.get(bg);
-          if (!gainNode) {
-            gainNode = gainCtx.createGain();
-            const src = gainCtx.createMediaElementSource(bg);
-            src.connect(gainNode);
-            gainNode.connect(gainCtx.destination);
-            gainNodeMap.set(bg, gainNode);
-          }
-          gainNode.gain.setValueAtTime(0, gainCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(bgVolRef.current, gainCtx.currentTime + 0.08);
-        } catch (e) {
-          console.warn('BGM GainNode setup failed:', e);
-        }
+      const gainNode = gainCtx ? gainNodeMap.get(bg) : undefined;
+      if (gainNode && preWarmBgRef.current === bg) {
+        gainNode.gain.cancelScheduledValues(gainCtx!.currentTime);
+        gainNode.gain.setValueAtTime(0, gainCtx!.currentTime);
+        gainNode.gain.linearRampToValueAtTime(bgVolRef.current, gainCtx!.currentTime + 0.08);
       }
     }).catch(() => {});
   }, [themeId, segments]);
