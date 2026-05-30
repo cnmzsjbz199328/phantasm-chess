@@ -25,6 +25,12 @@ export function OutroOverlay({ meta, onClose }: Props) {
         )}
 
         <section className="outro-section">
+          {meta.directedBy && (
+            <div className="outro-credit-row">
+              <span className="outro-credit-role">Director</span>
+              <span className="outro-credit-name">{meta.directedBy}</span>
+            </div>
+          )}
           {meta.director && (
             <div className="outro-credit-row">
               <span className="outro-credit-role">Featured</span>

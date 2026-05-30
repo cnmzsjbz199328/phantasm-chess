@@ -9,6 +9,7 @@ export interface SceneMeta {
   description: string[];
   cast: CastMember[];
   director?: string;
+  directedBy?: string;
   writer?: string;
   tools?: string[];
   nextEpisode?: string;
