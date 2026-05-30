@@ -14,7 +14,7 @@ function getTravelProfile(pieceType: string, isCaptureApproach = false) {
   const t = pieceType.toLowerCase();
   const durationScale = isCaptureApproach ? 0.78 : 1;
 
-  if (t === "n") return { duration: 0.96 * durationScale, lift: 0.62, sway: 0.08, ease: "power2.inOut" };
+  if (t === "n") return { duration: 0.90 * durationScale, lift: 0.28, sway: 0.06, ease: "power2.inOut" };
   if (t === "r") return { duration: 0.92 * durationScale, lift: 0.04, sway: 0.03, ease: "power3.out" };
   if (t === "b") return { duration: 0.84 * durationScale, lift: 0.18, sway: 0.05, ease: "sine.inOut" };
   if (t === "q") return { duration: 0.88 * durationScale, lift: 0.22, sway: 0.06, ease: "power2.inOut" };
@@ -49,16 +49,16 @@ export function playTravelAnimation(
   if (t === "n") {
     tl.to(model.position, {
       y: profile.lift,
-      duration: dur * 0.5,
+      duration: dur * 0.25,
       ease: "power2.out",
       yoyo: true,
-      repeat: 1,
+      repeat: 3,
     }, 0);
     tl.to(model.rotation, {
-      x: -0.18,
-      duration: dur * 0.5,
+      x: -0.22,
+      duration: dur * 0.25,
       yoyo: true,
-      repeat: 1,
+      repeat: 3,
       ease: "sine.inOut",
     }, 0);
   } else if (t === "r") {

@@ -34,6 +34,10 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
   const walkPhaseRef = useRef(0);
   const wasDissolving = useRef(false);
   const wasWalking    = useRef(false);
+  const knightFrontLeftRef  = useRef<THREE.Group>(null);
+  const knightFrontRightRef = useRef<THREE.Group>(null);
+  const knightBackLeftRef   = useRef<THREE.Group>(null);
+  const knightBackRightRef  = useRef<THREE.Group>(null);
   const dissolveTargets = useRef<THREE.ShaderMaterial[]>([]);
 
   useEffect(() => {
@@ -77,7 +81,8 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
   useFrame((state, dt) => {
     if (!groupRef.current) return;
     const pieceType = type.toLowerCase();
-    const canWalk = pieceType === "p" || pieceType === "k" || pieceType === "q" || pieceType === "b";
+    const isKnight = pieceType === "n";
+    const canWalk = isKnight || pieceType === "p" || pieceType === "k" || pieceType === "q" || pieceType === "b";
     const walkActive = Boolean(locomotion?.active && canWalk);
     const d = dissolveRef?.current ?? 0;
     const isDissolving = d > 0.001;
@@ -86,7 +91,25 @@ export const HumanoidPieceModel = forwardRef<PieceRig, HumanoidPieceProps>(
 
     const walkIntensity = locomotion?.intensity ?? 1;
 
-    if (walkActive) {
+    if (isKnight) {
+      if (walkActive) {
+        wasWalking.current = true;
+        walkPhaseRef.current += dt * (locomotion?.speed ?? 14);
+        const phase = walkPhaseRef.current;
+        const swing = Math.sin(phase) * 0.42 * walkIntensity;
+        // Diagonal pairs: front-left & back-right together, opposite diagonal in antiphase
+        if (knightFrontLeftRef.current)  knightFrontLeftRef.current.rotation.x  =  swing;
+        if (knightBackRightRef.current)  knightBackRightRef.current.rotation.x  =  swing;
+        if (knightFrontRightRef.current) knightFrontRightRef.current.rotation.x = -swing;
+        if (knightBackLeftRef.current)   knightBackLeftRef.current.rotation.x   = -swing;
+      } else if (wasWalking.current) {
+        const legRefs = [knightFrontLeftRef, knightFrontRightRef, knightBackLeftRef, knightBackRightRef];
+        legRefs.forEach(r => {
+          if (r.current) r.current.rotation.x = THREE.MathUtils.lerp(r.current.rotation.x, 0, 0.18);
+        });
+        if (legRefs.every(r => Math.abs(r.current?.rotation.x ?? 0) < 0.002)) wasWalking.current = false;
+      }
+    } else if (walkActive) {
       wasWalking.current = true;
       walkPhaseRef.current += dt * (locomotion?.speed ?? 12);
       const phase = walkPhaseRef.current;
@@ -305,7 +328,10 @@ const foot      = (x: number) => <group ref={sideRef(x, leftFootRef, rightFootRe
         <mesh position={[0, 0.28, 0]}><boxGeometry args={[0.3, 0.36, 0.7]} /><DM {...m(cv.sec)} /></mesh>
         {([-0.1, 0.1] as number[]).flatMap(x =>
           ([-0.26, 0.26] as number[]).map((z) => (
-            <group key={`${x}_${z}`}>
+            <group
+              key={`${x}_${z}`}
+              ref={x < 0 ? (z > 0 ? knightFrontLeftRef : knightBackLeftRef) : (z > 0 ? knightFrontRightRef : knightBackRightRef)}
+            >
               <mesh position={[x, 0.13, z]}><boxGeometry args={[0.12, 0.26, 0.12]} /><DM {...m(cv.sec)} /></mesh>
               <mesh position={[x, 0.02, z + (z > 0 ? 0.04 : -0.04)]}><boxGeometry args={[0.12, 0.06, 0.2]} /><DM {...m(cv.dark)} {...POLYGON_OFFSET} /></mesh>
             </group>
