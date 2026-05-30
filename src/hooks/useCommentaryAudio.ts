@@ -172,48 +172,49 @@ export function useCommentaryAudio(
 
     preWarmThemeRef.current = themeId;
 
-    // 1. Initialize / resume AudioContext synchronously within the gesture
+    // 1. Initialize / resume globalAudioCtx within the user gesture.
     const ctx = getAudioCtx();
     if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
 
-    // 2. Unlock commentary audio via native play at volume 0 (no GainNode yet).
-    //    On iOS, play() must be called on the raw element (before createMediaElementSource)
-    //    so the browser records the user-gesture unlock for future non-gesture plays.
-    //    The GainNode is wired later in playSegment when actual playback starts.
+    // 2. Unlock globalAudioCtx by playing a silent 1-sample buffer — same pattern as
+    //    unlockAudioSession() in useGameOrchestrator, but on *this* shared context.
+    //    unlockAudioSession() unlocks its own separate AudioContext instance; this step
+    //    ensures globalAudioCtx is also audio-session-unlocked so future element.play()
+    //    calls through GainNodes succeed on iOS without requiring another user gesture.
+    if (ctx) {
+      try {
+        const silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        const silentSrc = ctx.createBufferSource();
+        silentSrc.buffer = silentBuf;
+        silentSrc.connect(ctx.destination);
+        silentSrc.start(0);
+      } catch { /* best-effort */ }
+    }
+
+    // 3. Wire GainNode for commentary at gain=0 BEFORE play().
+    //    iOS ignores .volume for elements not yet in the Web Audio graph, so a GainNode
+    //    is the only reliable way to silence the pre-warm play on iOS.
+    //    globalAudioCtx is already unlocked above, so the future non-gesture play()
+    //    in playSegment succeeds through the graph.
     const segFile =
       segments > 0
         ? `/audio/${themeId}/seg_1.wav`
         : `/audio/${themeId}/commentary.mp3`;
     const com = new Audio(segFile);
-    try { com.volume = 0; } catch {}
+    setAudioVolume(com, 0);
     preWarmComRef.current = com;
 
-    // 3. BGM: unlock via native play first (within gesture), then wire GainNode
-    //    immediately (still within gesture) at gain=0 to avoid the brief full-volume
-    //    flash that occurred in the old approach of deferring GainNode to .then().
+    // 4. Wire GainNode for BGM at gain=0 BEFORE play() — consistent with commentary,
+    //    avoids the brief full-volume flash that occurred when GainNode was deferred.
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
-    try { bg.volume = 0; } catch {}
-    bg.play().catch(() => {}); // unlock element BEFORE createMediaElementSource
+    setAudioVolume(bg, 0);
     preWarmBgRef.current = bg;
-
-    // Wire BGM GainNode while still in user-gesture, gain=0 matches native silence.
-    const wireCtx = getAudioCtx();
-    if (wireCtx) {
-      try {
-        const bgGain = wireCtx.createGain();
-        bgGain.gain.setValueAtTime(0, wireCtx.currentTime);
-        wireCtx.createMediaElementSource(bg).connect(bgGain);
-        bgGain.connect(wireCtx.destination);
-        gainNodeMap.set(bg, bgGain);
-      } catch (e) {
-        console.warn('BGM GainNode pre-warm failed:', e);
-      }
-    }
+    bg.play().catch(() => {});
 
     Promise.resolve(com.play().catch(() => {})).then(() => {
       if (preWarmComRef.current === com) { com.pause(); com.currentTime = 0; }
-      // BGM GainNode was wired above — just ramp to target level.
+      // BGM GainNode already wired — just ramp to target level.
       const gainCtx = getAudioCtx();
       const gainNode = gainCtx ? gainNodeMap.get(bg) : undefined;
       if (gainNode && preWarmBgRef.current === bg) {
