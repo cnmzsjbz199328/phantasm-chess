@@ -176,26 +176,44 @@ export function useCommentaryAudio(
     const ctx = getAudioCtx();
     if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
 
-    // 2. Unlock commentary audio (played silently then paused).
-    //    setAudioVolume (GainNode-based) must be called before play() — iOS ignores .volume writes.
+    // 2. Unlock commentary audio via native play at volume 0 (no GainNode yet).
+    //    On iOS, play() must be called on the raw element (before createMediaElementSource)
+    //    so the browser records the user-gesture unlock for future non-gesture plays.
+    //    The GainNode is wired later in playSegment when actual playback starts.
     const segFile =
       segments > 0
         ? `/audio/${themeId}/seg_1.wav`
         : `/audio/${themeId}/commentary.mp3`;
     const com = new Audio(segFile);
+    try { com.volume = 0; } catch {}
     preWarmComRef.current = com;
-    setAudioVolume(com, 0); // wires GainNode at gain=0 synchronously before play
 
-    // 3. Start background music at volume 0 via GainNode before play(), then ramp after unlock.
+    // 3. BGM: unlock via native play first (within gesture), then wire GainNode
+    //    immediately (still within gesture) at gain=0 to avoid the brief full-volume
+    //    flash that occurred in the old approach of deferring GainNode to .then().
     const bg = new Audio(`/audio/${themeId}/background.mp3`);
     bg.loop = true;
+    try { bg.volume = 0; } catch {}
+    bg.play().catch(() => {}); // unlock element BEFORE createMediaElementSource
     preWarmBgRef.current = bg;
-    setAudioVolume(bg, 0); // wires GainNode at gain=0 synchronously before play
-    bg.play().catch(() => {});
+
+    // Wire BGM GainNode while still in user-gesture, gain=0 matches native silence.
+    const wireCtx = getAudioCtx();
+    if (wireCtx) {
+      try {
+        const bgGain = wireCtx.createGain();
+        bgGain.gain.setValueAtTime(0, wireCtx.currentTime);
+        wireCtx.createMediaElementSource(bg).connect(bgGain);
+        bgGain.connect(wireCtx.destination);
+        gainNodeMap.set(bg, bgGain);
+      } catch (e) {
+        console.warn('BGM GainNode pre-warm failed:', e);
+      }
+    }
 
     Promise.resolve(com.play().catch(() => {})).then(() => {
       if (preWarmComRef.current === com) { com.pause(); com.currentTime = 0; }
-      // GainNode already wired by setAudioVolume above — just ramp BGM to target level.
+      // BGM GainNode was wired above — just ramp to target level.
       const gainCtx = getAudioCtx();
       const gainNode = gainCtx ? gainNodeMap.get(bg) : undefined;
       if (gainNode && preWarmBgRef.current === bg) {
