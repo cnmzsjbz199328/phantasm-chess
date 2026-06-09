@@ -74,7 +74,7 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     director: "Anderssen",
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
-    nextEpisode: "Next: Kasparov's Immortal — Wijk aan Zee, 1999.",
+    nextEpisode: "Next: The Polish Immortal — Warsaw, 1930.",
     commentarySegments: 5,
   },
   jade: {
@@ -94,6 +94,25 @@ export const THEME_META_MAP: Record<string, SceneMeta> = {
     writer: "Phantasm Chess",
     tools: ["React Three Fiber", "Three.js", "Claude Sonnet 4.6"],
     nextEpisode: "Next: The Evergreen Game — Berlin, 1852.",
+    commentarySegments: 5,
+  },
+  polish: {
+    title: "The Polish Immortal",
+    subtitle: "1930 · Warsaw",
+    description: [
+      "Warsaw, 1930. Gliksberg, a local chess master, meets a young and brilliant Miguel Najdorf in a club match.",
+      "Najdorf unleashes a sequence of four minor piece sacrifices. A bishop on h2. A bishop on g1. A bishop on g4. A knight on e5.",
+      "By the time Gliksberg captures the final piece, his king is lured into a deadly mating net woven by a single pawn.\n\nThe chess world calls it 'The Polish Immortal' — a masterpiece of romantic sacrificial chess.",
+    ],
+    cast: [
+      { role: "White", name: "Gliksberg" },
+      { role: "Black", name: "Miguel Najdorf" },
+    ],
+    directedBy: "Tom",
+    director: "Najdorf",
+    writer: "Phantasm Chess",
+    tools: ["React Three Fiber", "Three.js", "Gemini 3.5 Flash"],
+    nextEpisode: "Next: Kasparov's Immortal — Wijk aan Zee, 1999.",
     commentarySegments: 5,
   },
 };

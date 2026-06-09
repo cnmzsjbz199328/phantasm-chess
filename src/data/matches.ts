@@ -118,11 +118,31 @@ export const OPERA_GAME: MatchData = {
   }
 };
 
+// ── polish ────────────────────────────────────────────────────────────────────
+export const POLISH_IMMORTAL: MatchData = {
+  title: "The Polish Immortal",
+  white: "Gliksberg",
+  black: "Miguel Najdorf",
+  date: "1930",
+  site: "Warsaw",
+  pgn: "1. d4 f5 2. c4 Nf6 3. Nc3 e6 4. Nf3 d5 5. e3 c6 6. Bd3 Bd6 7. O-O O-O 8. Ne2 Nbd7 9. Ng5 Bxh2+ 10. Kh1 Ng4 11. f4 Qe8 12. g3 Qh5 13. Kg2 Bg1 14. Nxg1 Qh2+ 15. Kf3 e5 16. dxe5 Ndxe5+ 17. fxe5 Nxe5+ 18. Kf4 Ng6+ 19. Kf3 f4 20. exf4 Bg4+ 21. Kxg4 Ne5+ 22. fxe5 h5#",
+  narratives: {
+    0: "Warsaw, 1930. A casual game is played. Miguel Najdorf is about to orchestrate the Polish Immortal.",
+    17: "Bxh2+ — The first minor piece sacrifice. The white king is drawn out.",
+    25: "Bg1! — A quiet, stunning second bishop sacrifice to clear the way for the queen.",
+    29: "e5 — White blocks the files, but Najdorf responds by sacrificing his knights.",
+    39: "Bg4+ — The third sacrifice. Gliksberg accepts with his king.",
+    41: "Ne5+ — The fourth and final minor piece sacrifice. Gliksberg takes the knight.",
+    43: "h5# — Checkmate by a lone pawn. All four minor pieces were sacrificed to weave this mating web."
+  }
+};
+
 // ── theme → match mapping ────────────────────────────────────────────────────
 export const THEME_MATCH_MAP: Record<string, MatchData> = {
-  abyss: KASPAROV_TOPALOV_1999,
-  arena: IMMORTAL_GAME,
+  abyss:  KASPAROV_TOPALOV_1999,
+  arena:  IMMORTAL_GAME,
   molten: GAME_OF_CENTURY,
   frost:  EVERGREEN_MATCH,
   jade:   OPERA_GAME,
+  polish: POLISH_IMMORTAL,
 };

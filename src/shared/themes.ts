@@ -263,4 +263,48 @@ export const THEMES: SceneTheme[] = [
       treeFoliage: "#051007",
     },
   },
+
+  // ─── Polish ──────────────────────────────────────────────────────────────────
+  // Tragic blood-crimson and neon violet. The sacrificial altar.
+  {
+    id: "polish",
+    nameCN: "The Polish Immortal",
+    nameEN: "Polish",
+    dot: "#ff0055",
+    backdrop:
+      "radial-gradient(circle at 20% 18%, rgba(255,0,85,0.22), transparent 30%), " +
+      "radial-gradient(circle at 78% 22%, rgba(100,0,160,0.18), transparent 26%), " +
+      "linear-gradient(145deg, #0a0104 0%, #1c060d 45%, #050002 100%)",
+    background: "#0a0104",
+    fogColor: "#0a0104",
+    fogNear: 15,
+    fogFar: 35,
+    ambientIntensity: 0.3,
+    spotColor: "#ff1a40",
+    spotIntensity: 0.8,
+    pointColor: "#800040",
+    pointIntensity: 0.6,
+    bloomThreshold: 0.4,
+    bloomIntensity: 0.6,
+    bloomRadius: 0.35,
+    board: {
+      dark: "#140207", light: "#24040d",
+      darkEmissive: "#200008", lightEmissive: "#30000c",
+      emissiveIntensity: 0.15,
+      frame: "#100105",
+    },
+    world: {
+      variant: "abyss", // Reuses abyss model representation for compatibility
+      ground: "#0d0205",
+      courtyard: "#18040a",
+      stone: "#220812",
+      stoneEmissive: "#0a0204",
+      terrain: "#18060c",
+      terrainEmissive: "#080204",
+      glowA: "#ff0055", // Blood crimson accent
+      glowB: "#bd00ff", // Neon magenta accent
+      treeTrunk: "#100408",
+      treeFoliage: "#080204",
+    },
+  },
 ];
