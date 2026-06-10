@@ -173,7 +173,7 @@ function AbyssTerrain({ color, emi }: { color: string; emi: string }) {
       mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;
-  }, [blocks]);
+  }, [blocks, geo, mat]);
 
   return <instancedMesh ref={ref} args={[geo, mat, blocks.length]} />;
 }
@@ -228,7 +228,7 @@ function AbyssGlowAccents({ glowA, glowB }: { glowA: string; glowB: string }) {
     };
     apply(aRef.current, ptA);
     apply(bRef.current, ptB);
-  }, [ptA, ptB]);
+  }, [ptA, ptB, geo, aMat, bMat]);
 
   return (
     <>
@@ -292,7 +292,7 @@ function MoltenTerrain({ color, emi }: { color: string; emi: string }) {
       mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;
-  }, [blocks]);
+  }, [blocks, geo, mat]);
 
   return <instancedMesh ref={ref} args={[geo, mat, blocks.length]} />;
 }
@@ -333,7 +333,7 @@ function LavaCracks({ glowA }: { glowA: string }) {
       mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;
-  }, [cracks]);
+  }, [cracks, geo, mat]);
 
   return <instancedMesh ref={ref} args={[geo, mat, cracks.length]} />;
 }
@@ -412,7 +412,7 @@ function IceSpikeTerrain({ glowA }: { glowA: string }) {
       mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;
-  }, [spikes]);
+  }, [spikes, geo, mat]);
 
   return <instancedMesh ref={ref} args={[geo, mat, spikes.length]} />;
 }
@@ -468,7 +468,7 @@ function FrostCrystalAccents({ glowA, glowB }: { glowA: string; glowB: string })
     };
     apply(aRef.current, ptA);
     apply(bRef.current, ptB);
-  }, [ptA, ptB]);
+  }, [ptA, ptB, geo, aMat, bMat]);
 
   return (
     <>
@@ -561,7 +561,7 @@ function JadeTerrain({ color, emi }: { color: string; emi: string }) {
       mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;
-  }, [blocks]);
+  }, [blocks, geo, mat]);
 
   return <instancedMesh ref={ref} args={[geo, mat, blocks.length]} />;
 }
@@ -625,7 +625,7 @@ function JadeCrystalClusters({ glowA, glowB }: { glowA: string; glowB: string })
     };
     apply(aRef.current, ptA);
     apply(bRef.current, ptB);
-  }, [ptA, ptB]);
+  }, [ptA, ptB, geo, aMat, bMat]);
 
   return (
     <>
@@ -714,7 +714,7 @@ function ArenaTerrain({ color, emi }: { color: string; emi: string }) {
       mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;
-  }, [blocks]);
+  }, [blocks, geo, mat]);
 
   return <instancedMesh ref={ref} args={[geo, mat, blocks.length]} />;
 }

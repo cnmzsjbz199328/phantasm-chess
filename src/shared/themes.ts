@@ -1,4 +1,28 @@
-interface BoardTheme {
+// ─────────────────────────────────────────────────────────────────────────────
+// Scene theming is decoupled into three independent concerns, joined per match:
+//
+//   1. PALETTE  (ScenePalette)  — pure colour / light / bloom tuning. Geometry-
+//                                 agnostic and REUSABLE across any number of
+//                                 matches. Lives in PALETTES, keyed by a mood id.
+//   2. VARIANT  (WorldVariant)  — which world GEOMETRY generator to render
+//                                 (handled by ThemeAtmosphere's switch). Also
+//                                 reusable: many matches may share one variant.
+//   3. MATCH    (MatchScene)    — a match's on-screen identity (selector label +
+//                                 dot) plus references to a palette and a variant.
+//
+// A fully-resolved `SceneTheme` (palette + variant injected) is produced by
+// composing these in `THEMES`. Downstream code only ever sees `SceneTheme`, so
+// the decoupling is invisible at runtime.
+//
+// ── To add a new match ───────────────────────────────────────────────────────
+//   • Reuse an existing look:  add one row to MATCH_SCENES pointing at an
+//     existing `palette` + `variant`. (See "polish" reusing the "abyss" variant.)
+//   • New colours only:        add a ScenePalette to PALETTES, then reference it.
+//   • New geometry:            add a WorldVariant case in ThemeAtmosphere.
+//   (Match DATA — PGN, narrative, audio — stays keyed by `id` in data/ + audio/.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BoardTheme {
   dark: string;
   light: string;
   darkEmissive: string;
@@ -7,8 +31,11 @@ interface BoardTheme {
   frame: string;
 }
 
-export interface WorldTheme {
-  variant: "abyss" | "molten" | "frost" | "jade" | "arena";
+/** Geometry generators implemented in ThemeAtmosphere. */
+export type WorldVariant = "abyss" | "molten" | "frost" | "jade" | "arena";
+
+/** World colours only — the variant (geometry) is supplied separately per match. */
+export interface WorldPalette {
   ground: string;          // far ground plane (100×100 bedrock)
   courtyard: string;       // close-in paving (22×22)
   stone: string;           // battlement / post stone
@@ -21,11 +48,13 @@ export interface WorldTheme {
   treeFoliage: string;     // tree foliage base color (emissive = glowA)
 }
 
-export interface SceneTheme {
-  id: string;
-  nameCN: string;
-  nameEN: string;
-  dot: string;
+/** Resolved world theme = colours + the geometry variant. */
+export interface WorldTheme extends WorldPalette {
+  variant: WorldVariant;
+}
+
+/** A reusable colour/light/bloom palette, independent of geometry and match. */
+export interface ScenePalette {
   backdrop: string;
   background: string;
   fogColor: string;
@@ -40,17 +69,33 @@ export interface SceneTheme {
   bloomIntensity: number;
   bloomRadius: number;
   board: BoardTheme;
+  world: WorldPalette;
+}
+
+/** A match's scene identity: selector label + dot, plus palette/variant refs. */
+export interface MatchScene {
+  id: string;       // join key for match data / meta / audio (data/, audio/)
+  nameCN: string;
+  nameEN: string;
+  dot: string;
+  palette: string;  // key into PALETTES
+  variant: WorldVariant;
+}
+
+/** Fully-resolved theme consumed by the app (palette + variant + identity). */
+export interface SceneTheme extends Omit<ScenePalette, "world"> {
+  id: string;
+  nameCN: string;
+  nameEN: string;
+  dot: string;
   world: WorldTheme;
 }
 
-export const THEMES: SceneTheme[] = [
-  // ─── Abyss ────────────────────────────────────────────────────────────────────
+// ─── palettes (colour only, reusable) ─────────────────────────────────────────
+
+export const PALETTES: Record<string, ScenePalette> = {
   // Dark navy void; cyber-cyan clashes with crimson. The "canonical" WorldStage look.
-  {
-    id: "abyss",
-    nameCN: "Kasparov's Immortal",
-    nameEN: "Kasparov",
-    dot: "#2aaabf",
+  "cyan-void": {
     backdrop:
       "radial-gradient(circle at 20% 18%, rgba(0,120,160,0.22), transparent 30%), " +
       "radial-gradient(circle at 78% 22%, rgba(160,0,60,0.18), transparent 26%), " +
@@ -74,7 +119,6 @@ export const THEMES: SceneTheme[] = [
       frame: "#050510",
     },
     world: {
-      variant: "abyss",
       ground: "#050810",
       courtyard: "#08101c",
       stone: "#0c1422",
@@ -88,13 +132,8 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── Arena ───────────────────────────────────────────────────────────────────
-  // Golden hour in the ancient arena. Dusty sand, weathered travertine, and warm torches.
-  {
-    id: "arena",
-    nameCN: "The Immortal Game",
-    nameEN: "Immortal",
-    dot: "#ffcc33",
+  // Golden hour in the ancient arena. Dusty sand, weathered travertine, warm torches.
+  "golden-sand": {
     backdrop:
       "radial-gradient(circle at 50% 10%, rgba(255,180,60,0.18), transparent 30%), " +
       "radial-gradient(circle at 20% 80%, rgba(120,60,20,0.15), transparent 30%), " +
@@ -118,7 +157,6 @@ export const THEMES: SceneTheme[] = [
       frame: "#1a120a",
     },
     world: {
-      variant: "arena",
       ground: "#2d241a",
       courtyard: "#c2b280",
       stone: "#d2b48c",
@@ -132,13 +170,8 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── Molten ──────────────────────────────────────────────────────────────────
   // Volcanic forge. Scorched stone, ember sparks, molten orange and deep red.
-  {
-    id: "molten",
-    nameCN: "Game of the Century",
-    nameEN: "Century",
-    dot: "#ff7030",
+  "ember": {
     backdrop:
       "radial-gradient(circle at 50% 10%, rgba(220,80,0,0.3), transparent 26%), " +
       "radial-gradient(circle at 20% 82%, rgba(160,20,0,0.22), transparent 30%), " +
@@ -162,7 +195,6 @@ export const THEMES: SceneTheme[] = [
       frame: "#140400",
     },
     world: {
-      variant: "molten",
       ground: "#0a0300",
       courtyard: "#0e0500",
       stone: "#1a0c00",
@@ -176,13 +208,8 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── Frost ───────────────────────────────────────────────────────────────────
   // Arctic night. Crystalline ice, cold blue light, desolate silence.
-  {
-    id: "frost",
-    nameCN: "The Evergreen Game",
-    nameEN: "Evergreen",
-    dot: "#8be0ff",
+  "ice": {
     backdrop:
       "radial-gradient(circle at 50% 20%, rgba(80,160,220,0.2), transparent 28%), " +
       "radial-gradient(circle at 22% 76%, rgba(140,180,220,0.12), transparent 30%), " +
@@ -206,7 +233,6 @@ export const THEMES: SceneTheme[] = [
       frame: "#060c18",
     },
     world: {
-      variant: "frost",
       ground: "#030810",
       courtyard: "#06101c",
       stone: "#0a1424",
@@ -220,13 +246,8 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── Jade ────────────────────────────────────────────────────────────────────
   // Ancient dark ritual. Poisonous jade seeping through void purple ruin.
-  {
-    id: "jade",
-    nameCN: "The Opera Game",
-    nameEN: "Opera",
-    dot: "#00e878",
+  "jade": {
     backdrop:
       "radial-gradient(circle at 24% 20%, rgba(0,180,80,0.22), transparent 28%), " +
       "radial-gradient(circle at 76% 72%, rgba(100,0,160,0.18), transparent 28%), " +
@@ -250,7 +271,6 @@ export const THEMES: SceneTheme[] = [
       frame: "#030e06",
     },
     world: {
-      variant: "jade",
       ground: "#020a04",
       courtyard: "#060f08",
       stone: "#0c1810",
@@ -264,13 +284,8 @@ export const THEMES: SceneTheme[] = [
     },
   },
 
-  // ─── Polish ──────────────────────────────────────────────────────────────────
   // Tragic blood-crimson and neon violet. The sacrificial altar.
-  {
-    id: "polish",
-    nameCN: "The Polish Immortal",
-    nameEN: "Polish",
-    dot: "#ff0055",
+  "crimson": {
     backdrop:
       "radial-gradient(circle at 20% 18%, rgba(255,0,85,0.22), transparent 30%), " +
       "radial-gradient(circle at 78% 22%, rgba(100,0,160,0.18), transparent 26%), " +
@@ -294,7 +309,6 @@ export const THEMES: SceneTheme[] = [
       frame: "#100105",
     },
     world: {
-      variant: "abyss", // Reuses abyss model representation for compatibility
       ground: "#0d0205",
       courtyard: "#18040a",
       stone: "#220812",
@@ -307,4 +321,33 @@ export const THEMES: SceneTheme[] = [
       treeFoliage: "#080204",
     },
   },
+};
+
+// ─── match scenes (identity + palette/variant refs) ───────────────────────────
+
+export const MATCH_SCENES: MatchScene[] = [
+  { id: "abyss",  nameCN: "Kasparov's Immortal",   nameEN: "Kasparov",  dot: "#2aaabf", palette: "cyan-void",   variant: "abyss"  },
+  { id: "arena",  nameCN: "The Immortal Game",      nameEN: "Immortal",  dot: "#ffcc33", palette: "golden-sand", variant: "arena"  },
+  { id: "molten", nameCN: "Game of the Century",     nameEN: "Century",   dot: "#ff7030", palette: "ember",       variant: "molten" },
+  { id: "frost",  nameCN: "The Evergreen Game",      nameEN: "Evergreen", dot: "#8be0ff", palette: "ice",         variant: "frost"  },
+  { id: "jade",   nameCN: "The Opera Game",          nameEN: "Opera",     dot: "#00e878", palette: "jade",        variant: "jade"   },
+  // Reuses the "abyss" geometry with its own crimson palette — no bespoke variant.
+  { id: "polish", nameCN: "The Polish Immortal",     nameEN: "Polish",    dot: "#ff0055", palette: "crimson",     variant: "abyss"  },
 ];
+
+// ─── resolved themes (palette + variant composed per match) ───────────────────
+
+export const THEMES: SceneTheme[] = MATCH_SCENES.map((m) => {
+  const palette = PALETTES[m.palette];
+  if (!palette) {
+    throw new Error(`themes: scene "${m.id}" references unknown palette "${m.palette}"`);
+  }
+  return {
+    ...palette,
+    id: m.id,
+    nameCN: m.nameCN,
+    nameEN: m.nameEN,
+    dot: m.dot,
+    world: { variant: m.variant, ...palette.world },
+  };
+});
