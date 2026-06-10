@@ -321,6 +321,120 @@ export const PALETTES: Record<string, ScenePalette> = {
       treeFoliage: "#080204",
     },
   },
+
+  // Luxury gold and carbon. The gold coins rain.
+  "gold": {
+    backdrop:
+      "radial-gradient(circle at 20% 18%, rgba(255,215,0,0.18), transparent 30%), " +
+      "radial-gradient(circle at 78% 22%, rgba(40,30,10,0.22), transparent 26%), " +
+      "linear-gradient(145deg, #0f0b02 0%, #1c1505 45%, #050401 100%)",
+    background: "#0f0b02",
+    fogColor: "#0f0b02",
+    fogNear: 15,
+    fogFar: 35,
+    ambientIntensity: 0.35,
+    spotColor: "#ffd700",
+    spotIntensity: 0.9,
+    pointColor: "#ffa500",
+    pointIntensity: 0.6,
+    bloomThreshold: 0.45,
+    bloomIntensity: 0.55,
+    bloomRadius: 0.35,
+    board: {
+      dark: "#140e03", light: "#d4af37",
+      darkEmissive: "#241a05", lightEmissive: "#543d0a",
+      emissiveIntensity: 0.15,
+      frame: "#100b02",
+    },
+    world: {
+      ground: "#1f1807",
+      courtyard: "#2c220a",
+      stone: "#382c0e",
+      stoneEmissive: "#140f04",
+      terrain: "#251c09",
+      terrainEmissive: "#0f0b02",
+      glowA: "#ffd700", // Rich gold
+      glowB: "#ff8c00", // Dark orange/bronze
+      treeTrunk: "#1a1306",
+      treeFoliage: "#0d0a03",
+    },
+  },
+
+  // Retro futuristic hacker green and deep violet grids.
+  "cyber-neon": {
+    backdrop:
+      "radial-gradient(circle at 20% 18%, rgba(57,255,20,0.15), transparent 30%), " +
+      "radial-gradient(circle at 78% 22%, rgba(189,0,255,0.15), transparent 26%), " +
+      "linear-gradient(145deg, #010502 0%, #030d05 45%, #000201 100%)",
+    background: "#010502",
+    fogColor: "#010502",
+    fogNear: 16,
+    fogFar: 36,
+    ambientIntensity: 0.25,
+    spotColor: "#39ff14",
+    spotIntensity: 0.8,
+    pointColor: "#bd00ff",
+    pointIntensity: 0.7,
+    bloomThreshold: 0.35,
+    bloomIntensity: 0.65,
+    bloomRadius: 0.4,
+    board: {
+      dark: "#020a03", light: "#051808",
+      darkEmissive: "#001004", lightEmissive: "#002408",
+      emissiveIntensity: 0.18,
+      frame: "#010803",
+    },
+    world: {
+      ground: "#020803",
+      courtyard: "#041408",
+      stone: "#06200c",
+      stoneEmissive: "#010803",
+      terrain: "#031006",
+      terrainEmissive: "#010502",
+      glowA: "#39ff14", // Cyber neon green
+      glowB: "#bd00ff", // Digital magenta
+      treeTrunk: "#020c05",
+      treeFoliage: "#010603",
+    },
+  },
+
+  // Cosmic purple void with neon cyan stars. Space nebula atmosphere.
+  "nebula-void": {
+    backdrop:
+      "radial-gradient(circle at 20% 18%, rgba(189,0,255,0.2), transparent 30%), " +
+      "radial-gradient(circle at 78% 22%, rgba(0,210,255,0.2), transparent 26%), " +
+      "linear-gradient(145deg, #040108 0%, #0b0217 45%, #020005 100%)",
+    background: "#040108",
+    fogColor: "#040108",
+    fogNear: 18,
+    fogFar: 38,
+    ambientIntensity: 0.3,
+    spotColor: "#bd00ff",
+    spotIntensity: 0.85,
+    pointColor: "#00d2ff",
+    pointIntensity: 0.65,
+    bloomThreshold: 0.4,
+    bloomIntensity: 0.5,
+    bloomRadius: 0.35,
+    board: {
+      dark: "#06020d", light: "#0e051f",
+      darkEmissive: "#090018", lightEmissive: "#1b0038",
+      emissiveIntensity: 0.16,
+      frame: "#05010a",
+    },
+    world: {
+      ground: "#06020c",
+      courtyard: "#0f051e",
+      stone: "#16072a",
+      stoneEmissive: "#06020c",
+      terrain: "#0d041c",
+      terrainEmissive: "#04010a",
+      glowA: "#bd00ff", // Space purple glow
+      glowB: "#00d2ff", // Nebula cyan glow
+      treeTrunk: "#080312",
+      treeFoliage: "#04010a",
+    },
+  },
 };
 
 // ─── match scenes (identity + palette/variant refs) ───────────────────────────
@@ -333,6 +447,9 @@ export const MATCH_SCENES: MatchScene[] = [
   { id: "jade",   nameCN: "The Opera Game",          nameEN: "Opera",     dot: "#00e878", palette: "jade",        variant: "jade"   },
   // Reuses the "abyss" geometry with its own crimson palette — no bespoke variant.
   { id: "polish", nameCN: "The Polish Immortal",     nameEN: "Polish",    dot: "#ff0055", palette: "crimson",     variant: "abyss"  },
+  { id: "aurum",  nameCN: "The Gold Coins Game",     nameEN: "Gold Coins",dot: "#ffd700", palette: "gold",        variant: "arena"  },
+  { id: "cyber",  nameCN: "Deep Blue vs. Kasparov",  nameEN: "Deep Blue", dot: "#39ff14", palette: "cyber-neon",  variant: "abyss"  },
+  { id: "nebula", nameCN: "Rubinstein's Immortal",   nameEN: "Rubinstein",dot: "#bd00ff", palette: "nebula-void",  variant: "frost"  },
 ];
 
 // ─── resolved themes (palette + variant composed per match) ───────────────────

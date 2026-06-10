@@ -137,6 +137,58 @@ export const POLISH_IMMORTAL: MatchData = {
   }
 };
 
+// ── aurum ────────────────────────────────────────────────────────────────────
+export const LEVITSKY_MARSHALL_1912: MatchData = {
+  title: "The Gold Coins Game",
+  white: "Stepan Levitsky",
+  black: "Frank James Marshall",
+  date: "1912",
+  site: "Breslau",
+  pgn: "1. d4 e6 2. e4 d5 3. Nc3 c5 4. Nf3 Nc6 5. exd5 exd5 6. Be2 Nf6 7. O-O Be7 8. Bg5 O-O 9. dxc5 Be6 10. Nd4 Bxc5 11. Nxe6 fxe6 12. Bg4 Qd6 13. Bh3 Rae8 14. Qd2 Bb4 15. Bxf6 Rxf6 16. Rad1 Qc5 17. Qe2 Bxc3 18. bxc3 Qxc3 19. Rxd5 Nd4 20. Qh5 Ref8 21. Re5 Rh6 22. Qg5 Rxh3 23. Rc5 Qg3 24. hxg3 Ne2#",
+  narratives: {
+    0: "Breslau, 1912. Levitsky faces Marshall in a game that will culminate in a shower of gold coins.",
+    29: "Rxf6 — Black exchanges to open files and prepare the attack.",
+    37: "Nd4 — Marshall's knight leaps into the center, threatening the white queen.",
+    43: "Rxh3 — Marshall sacrifices the rook on h3. If gxh3, Nf3+ wins the queen.",
+    45: "Qg3!! — The legendary queen sacrifice. She stands on a square where she can be captured three different ways.",
+    47: "Ne2# — Checkmate by the knight! The queen sacrifice is accepted and leads to immediate defeat."
+  }
+};
+
+// ── cyber ────────────────────────────────────────────────────────────────────
+export const DEEP_BLUE_KASPAROV_1997: MatchData = {
+  title: "Deep Blue vs. Kasparov",
+  white: "Deep Blue",
+  black: "Garry Kasparov",
+  date: "1997",
+  site: "New York",
+  pgn: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nd7 5. Ng5 Ngf6 6. Bd3 e6 7. N1f3 h6 8. Nxe6 Qe7 9. O-O fxe6 10. Bg6+ Kd8 11. Bf4 b5 12. a4 Bb7 13. Re1 Nd5 14. Bg3 Kc8 15. axb5 cxb5 16. Qd3 Bc6 17. Bf5 exf5 18. Rxe7 Bxe7 19. c4 1-0",
+  narratives: {
+    0: "New York, 1997. The deciding Game 6 of the rematch between Garry Kasparov and IBM's supercomputer, Deep Blue.",
+    14: "Nxe6 — The computer shocks the world by sacrificing its knight. A profound, human-like positional sacrifice.",
+    18: "Bg6+ — The bishop locks the black king in the center. Black is forced to forfeit castling rights.",
+    32: "Bf5 — Deep Blue launches a finishing combination, offering its bishop to pin down the queen.",
+    36: "c4 — Kasparov resigns. The black queen is gone and the position is completely overrun by the computer."
+  }
+};
+
+// ── nebula ───────────────────────────────────────────────────────────────────
+export const ROTLEWI_RUBINSTEIN_1907: MatchData = {
+  title: "Rubinstein's Immortal",
+  white: "Georg Rotlewi",
+  black: "Akiba Rubinstein",
+  date: "1907",
+  site: "Lodz",
+  pgn: "1. d4 d5 2. Nf3 e6 3. e3 c5 4. c4 Nc6 5. Nc3 Nf6 6. dxc5 Bxc5 7. a3 a6 8. b4 Bd6 9. Bb2 O-O 10. Qd2 Qe7 11. Bd3 dxc4 12. Bxc4 b5 13. Bd3 Rd8 14. Qe2 Bb7 15. O-O Ne5 16. Nxe5 Bxe5 17. f4 Bc7 18. e4 Rac8 19. e5 Bb6+ 20. Kh1 Ng4 21. Be4 Qh4 22. g3 Rxc3 23. gxh4 Rd2 24. Qxd2 Bxe4+ 25. Qg2 Rh3 0-1",
+  narratives: {
+    0: "Lodz, 1907. Rotlewi faces Akiba Rubinstein in a game that will be known as Rubinstein's Immortal.",
+    39: "Ng4 — Rubinstein jumps his knight, beginning a beautiful offensive sequence.",
+    43: "Rxc3!! — Rubinstein sacrifices his queen! He ignores the threat to his queen to eliminate the defending knight.",
+    45: "Rd2!! — A second double-rook sacrifice! The black rook blocks the queen's defense.",
+    49: "Rh3 — White is completely paralyzed. Checkmate on h2 is unavoidable. Rotlewi resigns."
+  }
+};
+
 // ── theme → match mapping ────────────────────────────────────────────────────
 export const THEME_MATCH_MAP: Record<string, MatchData> = {
   abyss:  KASPAROV_TOPALOV_1999,
@@ -145,4 +197,7 @@ export const THEME_MATCH_MAP: Record<string, MatchData> = {
   frost:  EVERGREEN_MATCH,
   jade:   OPERA_GAME,
   polish: POLISH_IMMORTAL,
+  aurum:  LEVITSKY_MARSHALL_1912,
+  cyber:  DEEP_BLUE_KASPAROV_1997,
+  nebula: ROTLEWI_RUBINSTEIN_1907,
 };
