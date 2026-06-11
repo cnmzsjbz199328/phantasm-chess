@@ -13,7 +13,7 @@ const _hmr = (import.meta as unknown as { hot?: { dispose: (fn: () => void) => v
 if (_hmr) _hmr.dispose(() => { globalAudioCtx?.close(); globalAudioCtx = null; });
 
 /** BGM volume multiplier applied while commentary is audible (0–1). */
-const COMMENTARY_DUCK = 0.3;
+const COMMENTARY_DUCK = 0.18;
 
 /** Returns (creating if needed) the singleton AudioContext. */
 function getAudioCtx(): AudioContext | null {
@@ -355,7 +355,7 @@ export function useCommentaryAudio(
   }, [bgVol]);
 
   // ── BGM ducking — film-standard: pre-delay → slow fade → hold → post-delay → slow restore ──
-  // Duck:   wait 3 s then ramp to 40 % over 5 s  (commentary is short — listener adjusts first)
+  // Duck:   wait 3 s then ramp to 18 % over 5 s  (commentary is short — listener adjusts first)
   // Unduck: wait 3 s then ramp to 100 % over 3 s (slightly faster rise is less noticeable)
   // Keyed on commentaryIsPlaying (content-based) so the BGM restores the instant the last
   // segment ends rather than waiting for the phase machine to reach idle.
