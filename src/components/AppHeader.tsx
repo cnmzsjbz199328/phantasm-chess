@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Shield, Play, Pause, SkipBack, SkipForward, VolumeX, Volume, Volume1, Volume2, Maximize2, Minimize2 } from 'lucide-react';
 import { THEMES } from '../shared/themes';
 import { ChessTitle } from './ChessTitle';
@@ -47,6 +48,12 @@ export function AppHeader({
   commentaryVol, bgVol,
   onPrevStep, onNextStep, onPlayPause,
 }: AppHeaderProps) {
+  // Keep the selected scene visible within the horizontally-scrollable rail.
+  const activeSceneRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeSceneRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+  }, [themeIdx]);
+
   return (
     <header
       className={cn(
@@ -59,19 +66,20 @@ export function AppHeader({
     >
       {/* Primary row */}
       <div className="flex items-center justify-between px-3 sm:px-8 h-12 sm:h-14">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Shield className="text-phantasm-accent-light shrink-0" size={18} />
           <ChessTitle appPhase={appPhase} currentStep={currentStep} totalSteps={totalSteps} />
 
-          {/* Scene switcher */}
-          <div className="flex items-center gap-1 sm:gap-1.5 sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10">
+          {/* Scene switcher — horizontally scrollable rail; controls stay pinned */}
+          <div className="flex items-center gap-1 sm:gap-1.5 sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10 min-w-0 flex-1 overflow-x-auto scrollbar-hide scene-rail-fade">
             {THEMES.map((t, i) => (
               <button
                 key={t.id}
+                ref={i === themeIdx ? activeSceneRef : undefined}
                 onClick={() => onThemeChange(i)}
                 title={t.nameCN}
                 className={cn(
-                  'group flex h-7 sm:h-8 items-center gap-1.5 sm:gap-2 rounded-md border px-1.5 sm:px-2 text-xs transition-all duration-300',
+                  'group flex h-7 sm:h-8 shrink-0 items-center gap-1.5 sm:gap-2 rounded-md border px-1.5 sm:px-2 text-xs transition-all duration-300',
                   i === themeIdx
                     ? 'border-white/15 bg-white/10 text-white'
                     : 'border-transparent bg-transparent text-white/45 hover:bg-white/5 hover:text-white/80',
@@ -89,7 +97,7 @@ export function AppHeader({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <button
             onClick={onPrevStep}
             disabled={controlsLocked}

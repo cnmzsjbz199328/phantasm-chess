@@ -60,7 +60,7 @@ export function ChessTitle({ appPhase, currentStep, totalSteps }: ChessTitleProp
   const stepStr = String(currentStep + 1).padStart(2, '0');
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       <span
         ref={frontRef}
         className="flex items-center text-lg font-bold tracking-[0.2em] uppercase text-phantasm-accent-light whitespace-nowrap"
