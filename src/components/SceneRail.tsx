@@ -205,7 +205,7 @@ export function SceneRail({ themeIdx, onThemeChange }: SceneRailProps) {
   };
 
   return (
-    <div className="min-w-0 flex-1 max-w-[260px] sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10">
+    <div className="min-w-0 flex-1 max-w-65 sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10">
       <div
         ref={viewportRef}
         onPointerDown={onPointerDown}
