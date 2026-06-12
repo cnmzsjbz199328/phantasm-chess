@@ -17,20 +17,26 @@ After regenerating audio, restore `commentarySegments` to `5` in `src/data/match
 ---
 
 #### Segment 1
-**Suggested duration:** ~30 s · intro phase, before first move
+**Suggested duration:** ~50 s · intro phase, before first move
 
-Alright, WELCOME to Phantasm Chess! Today, we are heading to Breslau in July 1912. We are about to witness a match that produced one of the most celebrated single moves in the history of international chess: "The Gold Coins Game."
+Alright, WELCOME to Phantasm Chess! Today, we are heading all the way back to Breslau, Germany — July 1912. The DSB Congress, one of the most prestigious chess tournaments on the European circuit, is in full swing. The hall is packed. The air is electric. And we are about to witness a single move that will be talked about for over a century.
 
-Playing black is Frank James Marshall, the reigning American Champion, famous for his fierce attacking style and refusal to draw. Across from him is Stepan Levitsky, a formidable Russian master. The tournament is reaching its climax, and Marshall is about to immortalize this board with a move so unexpected, it literally showered the stage in gold.
+This is "The Gold Coins Game."
+
+Playing Black today is Frank James Marshall — the reigning United States Chess Champion, a man who has defeated world champions, terrorized grandmasters across two continents, and built a legacy entirely on attacking chess so sharp it defies belief. Facing him is Stepan Levitsky, a seasoned and dangerous Russian master who is no stranger to elite competition.
+
+The tournament standings are tight. Every game matters. And Marshall — never one to play it safe — is about to do something that will stop the entire room cold.
 
 ---
 
 #### Segment 2
-**Suggested duration:** ~35 s · opening and development
+**Suggested duration:** ~55 s · opening and development
 
-Born in Brooklyn in 1877, Frank Marshall was a true romantic player. He didn't care about slow positional maneuvering — he wanted wild tactics, open lines, and sudden checkmates.
+Let's talk about this man, Frank James Marshall. Born in Brooklyn in 1877, Marshall was an absolute anomaly in early twentieth-century chess. While other champions studied endgames and played for tiny advantages, Marshall wanted fire. He wanted chaos. He wanted the moment where the board explodes and every piece is on the edge of disaster.
 
-Levitsky opens with d4. Marshall plays e6. The game transitions into a French Defense variation. Levitsky tries to claim the center, but Marshall counters aggressively. By move twelve, Marshall has castled and established a strong center presence, despite Levitsky trying to put pressure on his queen. Marshall is slowly building a tactical web, patiently waiting for the perfect opportunity to strike.
+He defeated Mikhail Chigorin. He held his own against Emanuel Lasker and José Raúl Capablanca. He won the United States Championship and defended it for years. And here's the thing about Marshall that makes this game so fitting — he was famous for saving his most outrageous ideas for the biggest moments, against the toughest opponents.
+
+Now, the game. Levitsky opens with d4. Marshall replies e6, steering the game into a French Defense variation. Levitsky tries to dictate the pace, claiming the center and exchanging pawns early. But Marshall is not in a hurry. He develops smoothly — Nf6, Be7, castles on move eight — and starts positioning his pieces with quiet precision. By move twelve, he has his rooks connected and his knight eyeing the center. From the outside it looks calm. But Marshall is already threading the trap. He is patient because he knows exactly where this is going.
 
 ---
 
