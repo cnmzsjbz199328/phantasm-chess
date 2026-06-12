@@ -1,7 +1,6 @@
-import { useEffect, useRef } from 'react';
 import { Shield, Play, Pause, SkipBack, SkipForward, VolumeX, Volume, Volume1, Volume2, Maximize2, Minimize2 } from 'lucide-react';
-import { THEMES } from '../shared/themes';
 import { ChessTitle } from './ChessTitle';
+import { SceneRail } from './SceneRail';
 import { cn } from '../lib/utils';
 import type { AppPhase } from '../shared/AppPhase';
 import { COMMENTARY_LEVELS, BG_LEVELS } from '../shared/audioLevels';
@@ -48,12 +47,6 @@ export function AppHeader({
   commentaryVol, bgVol,
   onPrevStep, onNextStep, onPlayPause,
 }: AppHeaderProps) {
-  // Keep the selected scene visible within the horizontally-scrollable rail.
-  const activeSceneRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    activeSceneRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-  }, [themeIdx]);
-
   return (
     <header
       className={cn(
@@ -70,31 +63,8 @@ export function AppHeader({
           <Shield className="text-phantasm-accent-light shrink-0" size={18} />
           <ChessTitle appPhase={appPhase} currentStep={currentStep} totalSteps={totalSteps} />
 
-          {/* Scene switcher — horizontally scrollable rail; controls stay pinned */}
-          <div className="flex items-center gap-1 sm:gap-1.5 sm:ml-4 sm:pl-4 sm:border-l sm:border-white/10 min-w-0 flex-1 overflow-x-auto scrollbar-hide scene-rail-fade">
-            {THEMES.map((t, i) => (
-              <button
-                key={t.id}
-                ref={i === themeIdx ? activeSceneRef : undefined}
-                onClick={() => onThemeChange(i)}
-                title={t.nameCN}
-                className={cn(
-                  'group flex h-7 sm:h-8 shrink-0 items-center gap-1.5 sm:gap-2 rounded-md border px-1.5 sm:px-2 text-xs transition-all duration-300',
-                  i === themeIdx
-                    ? 'border-white/15 bg-white/10 text-white'
-                    : 'border-transparent bg-transparent text-white/45 hover:bg-white/5 hover:text-white/80',
-                )}
-              >
-                <span
-                  className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shadow-[0_0_12px_currentColor] shrink-0"
-                  style={{ backgroundColor: t.dot, color: t.dot }}
-                />
-                <span className={cn('hidden max-w-24 truncate', i === themeIdx ? 'md:inline' : 'lg:inline')}>
-                  {t.nameEN}
-                </span>
-              </button>
-            ))}
-          </div>
+          {/* Scene switcher — looping, position-revealing rail (see SceneRail) */}
+          <SceneRail themeIdx={themeIdx} onThemeChange={onThemeChange} />
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
